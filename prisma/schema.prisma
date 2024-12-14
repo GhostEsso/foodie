@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model User {
+  id         String    @id
+  email      String    @unique
+  name       String
+  role       UserRole  @default(USER)
+  building   Building  @relation(fields: [buildingId], references: [id])
+  buildingId String
+  dishes     Dish[]
+  orders     Order[]
+  bookings   Booking[]
+  messages   Message[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Building {
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("buildings")
+}
+
+model Dish {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  price       Float
+  ingredients String[]
+  images      String[]
+  available   Boolean   @default(true)
+  portions    Int       @default(1)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  orders      Order[]
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("dishes")
+}
+
+model Booking {
+  id          String   @id @default(uuid())
+  dish        Dish     @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  dishId      String
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  pickupTime  DateTime
+  portions    Int      @default(1)
+  status      String   @default("pending") // pending, confirmed, cancelled, completed
+  total       Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("bookings")
+}
+
+model Order {
+  id        String   @id @default(uuid())
+  dish      Dish     @relation(fields: [dishId], references: [id])
+  dishId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  status    String   @default("pending") // pending, confirmed, delivered
+  quantity  Int      @default(1)
+  total     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("orders")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("messages")
+}
