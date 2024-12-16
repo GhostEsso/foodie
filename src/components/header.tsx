@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ChevronDown, Settings, LogOut } from 'lucide-react';
 
 function NavLinks({ session }: { session: any }) {
   return (
@@ -33,6 +33,52 @@ function NavLinks({ session }: { session: any }) {
   );
 }
 
+function UserMenu({ session }: { session: any }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900"
+      >
+        <span>{session.name}</span>
+        <ChevronDown className="h-4 w-4" />
+      </button>
+
+      {isOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => setIsOpen(false)}
+          />
+          <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20">
+            <div className="py-1">
+              <Link
+                href="/settings"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsOpen(false)}
+              >
+                <Settings className="h-4 w-4" />
+                Paramètres
+              </Link>
+              <form action="/api/auth/logout" method="POST">
+                <button
+                  type="submit"
+                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Déconnexion
+                </button>
+              </form>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function Header({ session }: { session: any }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -51,17 +97,7 @@ export function Header({ session }: { session: any }) {
           <div className="flex items-center">
             <div className="hidden sm:flex items-center">
               {session ? (
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-gray-700">{session.name}</span>
-                  <form action="/api/auth/logout" method="POST">
-                    <button
-                      type="submit"
-                      className="text-gray-900 hover:text-primary-600 px-3 py-2 text-sm font-medium"
-                    >
-                      Déconnexion
-                    </button>
-                  </form>
-                </div>
+                <UserMenu session={session} />
               ) : (
                 <>
                   <Link
@@ -104,12 +140,19 @@ export function Header({ session }: { session: any }) {
             <NavLinks session={session} />
             {session ? (
               <div className="border-t pt-3 mt-3">
-                <span className="text-sm text-gray-700 px-3">{session.name}</span>
+                <Link
+                  href="/settings"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900"
+                >
+                  <Settings className="h-4 w-4" />
+                  Paramètres
+                </Link>
                 <form action="/api/auth/logout" method="POST" className="mt-2">
                   <button
                     type="submit"
-                    className="text-gray-900 hover:text-primary-600 px-3 py-2 text-sm font-medium w-full text-left"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:text-gray-900"
                   >
+                    <LogOut className="h-4 w-4" />
                     Déconnexion
                   </button>
                 </form>
