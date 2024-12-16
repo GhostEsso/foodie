@@ -1,6 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "../../../../lib/prisma";
+import { getSession } from "../../../../lib/auth";
 
 interface RouteParams {
   params: {
@@ -11,8 +11,8 @@ interface RouteParams {
 // Récupérer une réservation spécifique
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { userId } = auth();
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
@@ -44,7 +44,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     }
 
     // Vérifier que l'utilisateur est soit le créateur de la réservation, soit le propriétaire du plat
-    if (booking.userId !== userId && booking.dish.userId !== userId) {
+    if (booking.userId !== session.id && booking.dish.userId !== session.id) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
@@ -57,8 +57,8 @@ export async function GET(request: Request, { params }: RouteParams) {
 // Mettre à jour le statut d'une réservation
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
-    const { userId } = auth();
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
@@ -81,7 +81,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     }
 
     // Seul le propriétaire du plat peut confirmer/annuler une réservation
-    if (booking.dish.userId !== userId) {
+    if (booking.dish.userId !== session.id) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
@@ -99,8 +99,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 // Annuler une réservation
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const { userId } = auth();
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
@@ -114,7 +114,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     }
 
     // Seul l'utilisateur qui a fait la réservation peut l'annuler
-    if (booking.userId !== userId) {
+    if (booking.userId !== session.id) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 

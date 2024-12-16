@@ -1,6 +1,8 @@
+"use client";
+
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { formatPrice } from "@/lib/utils";
+import Button from "../ui/button";
+import { formatPrice } from "../../lib/utils";
 
 interface BookingFormProps {
   dish: {

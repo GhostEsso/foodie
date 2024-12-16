@@ -1,18 +1,17 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "../../../lib/prisma";
+import { getSession } from "../../../lib/auth";
 
-// Récupérer les réservations de l'utilisateur
 export async function GET() {
   try {
-    const { userId } = auth();
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
     const bookings = await prisma.booking.findMany({
       where: {
-        userId,
+        userId: session.id,
       },
       include: {
         dish: {
@@ -46,56 +45,40 @@ export async function GET() {
 // Créer une nouvelle réservation
 export async function POST(request: Request) {
   try {
-    const { userId } = auth();
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const data = await request.json();
-    const { dishId, pickupTime, portions } = data;
+    const { dishId, portions, pickupTime } = await request.json();
 
-    // Vérifier la disponibilité du plat
+    // Récupérer le prix du plat
     const dish = await prisma.dish.findUnique({
       where: { id: dishId },
-      include: {
-        bookings: {
-          where: {
-            status: "confirmed",
-          },
-          select: {
-            portions: true,
-          },
-        },
-      },
+      select: { price: true }
     });
 
     if (!dish) {
       return NextResponse.json({ error: "Plat non trouvé" }, { status: 404 });
     }
 
-    // Calculer les portions restantes
-    const bookedPortions = dish.bookings.reduce((sum, booking) => sum + booking.portions, 0);
-    const availablePortions = dish.portions - bookedPortions;
-
-    if (portions > availablePortions) {
-      return NextResponse.json({ 
-        error: "Portions insuffisantes",
-        availablePortions 
-      }, { status: 400 });
-    }
-
     const booking = await prisma.booking.create({
       data: {
+        userId: session.id,
         dishId,
-        userId,
+        portions,
         pickupTime: new Date(pickupTime),
-        portions: parseInt(portions),
-        total: dish.price * parseInt(portions),
+        status: "confirmed",
+        total: dish.price * portions,
       },
     });
 
     return NextResponse.json(booking);
   } catch (error) {
-    return NextResponse.json({ error: "Erreur lors de la création de la réservation" }, { status: 500 });
+    console.error("Erreur lors de la création de la réservation:", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la création de la réservation" },
+      { status: 500 }
+    );
   }
 } 

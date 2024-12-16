@@ -1,48 +1,59 @@
 "use client";
 
-import React from "react";
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "../../components/ui/button";
 import { auth } from "../../lib/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
-export function LoginForm() {
+interface Building {
+  id: string;
+  name: string;
+}
+
+export function SignUpForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [buildings, setBuildings] = useState<Building[]>([]);
+
+  useEffect(() => {
+    // Charger la liste des bâtiments
+    fetch("/api/buildings")
+      .then((res) => res.json())
+      .then((data) => setBuildings(data))
+      .catch((error) => console.error("Erreur lors du chargement des bâtiments:", error));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
-    const form = e.target as HTMLFormElement;
+    const formData = new FormData(e.currentTarget);
     const data = {
-      email: (form.elements.namedItem('email') as HTMLInputElement).value,
-      password: (form.elements.namedItem('password') as HTMLInputElement).value
+      email: formData.get("email") as string,
+      password: formData.get("password") as string,
+      name: formData.get("name") as string,
+      buildingId: formData.get("buildingId") as string,
     };
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
       if (!response.ok) {
-        const data = await response.json() as { error?: string };
-        throw new Error(data.error || "Erreur lors de la connexion");
+        const data = await response.json();
+        throw new Error(data.error || "Erreur lors de l'inscription");
       }
 
-      // Rediriger vers la page précédente ou la page d'accueil
-      const redirectTo = searchParams.get("redirect") || "/";
-      router.push(redirectTo);
-      router.refresh();
+      router.push("/login?message=Compte créé avec succès");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Erreur lors de la connexion");
+      setError(error instanceof Error ? error.message : "Erreur lors de l'inscription");
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +67,7 @@ export function LoginForm() {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       
-      // Connecter avec Google
+      // Créer un compte avec les informations Google
       const response = await fetch("/api/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,14 +79,11 @@ export function LoginForm() {
       });
 
       if (!response.ok) {
-        const data = await response.json() as { error?: string };
-        throw new Error(data.error || "Erreur lors de la connexion avec Google");
+        const data = await response.json();
+        throw new Error(data.error || "Erreur lors de l'inscription avec Google");
       }
 
-      // Rediriger vers la page précédente ou la page d'accueil
-      const redirectTo = searchParams.get("redirect") || "/";
-      router.push(redirectTo);
-      router.refresh();
+      router.push("/login?message=Compte créé avec succès");
     } catch (error) {
       setError("Erreur lors de la connexion avec Google");
       console.error(error);
@@ -86,12 +94,6 @@ export function LoginForm() {
 
   return (
     <div className="space-y-6">
-      {searchParams.get("message") && (
-        <div className="bg-green-50 text-green-600 px-4 py-2 rounded-lg text-sm">
-          {searchParams.get("message")}
-        </div>
-      )}
-
       <div>
         <Button
           type="button"
@@ -139,6 +141,19 @@ export function LoginForm() {
         )}
 
         <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            Nom complet
+          </label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            required
+            className="w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
+          />
+        </div>
+
+        <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
             Email
           </label>
@@ -160,18 +175,38 @@ export function LoginForm() {
             id="password"
             name="password"
             required
+            minLength={8}
             className="w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
           />
         </div>
 
+        <div>
+          <label htmlFor="buildingId" className="block text-sm font-medium text-gray-700 mb-1">
+            Bâtiment
+          </label>
+          <select
+            id="buildingId"
+            name="buildingId"
+            required
+            className="w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
+          >
+            <option value="">Sélectionnez votre bâtiment</option>
+            {buildings.map((building) => (
+              <option key={building.id} value={building.id}>
+                {building.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <Button type="submit" className="w-full" isLoading={isLoading}>
-          Se connecter
+          S'inscrire
         </Button>
 
         <p className="text-center text-sm text-gray-600">
-          Pas encore de compte ?{" "}
-          <Link href="/signup" className="text-primary-600 hover:text-primary-700">
-            S'inscrire
+          Déjà un compte ?{" "}
+          <Link href="/login" className="text-primary-600 hover:text-primary-700">
+            Se connecter
           </Link>
         </p>
       </form>

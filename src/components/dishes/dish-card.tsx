@@ -1,8 +1,10 @@
+import React from "react";
+
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { formatPrice } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import Button from "../ui/button";
+import { formatPrice } from "../../lib/utils";
+import { cn } from "../../lib/utils";
 
 interface DishCardProps {
   dish: {

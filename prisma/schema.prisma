@@ -23,6 +23,7 @@ model User {
   email      String    @unique
   password   String
   name       String
+  googleId   String?   @unique
   role       UserRole  @default(USER)
   building   Building  @relation(fields: [buildingId], references: [id])
   buildingId String

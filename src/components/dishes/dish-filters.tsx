@@ -1,8 +1,9 @@
 "use client";
 
+import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
-import { Button } from "@/components/ui/button";
+import Button from "../ui/button";
 
 interface Building {
   id: string;
