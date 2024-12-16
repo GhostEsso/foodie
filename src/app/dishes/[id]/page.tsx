@@ -45,6 +45,7 @@ async function getDish(id: string) {
     include: {
       user: {
         select: {
+          id: true,
           name: true,
           building: {
             select: {
@@ -78,6 +79,7 @@ async function getDish(id: string) {
 export default async function DishPage({ params }: { params: { id: string } }) {
   const session = await getSession();
   const dish = await getDish(params.id);
+  const isAuthor = session?.id === dish.user.id;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white py-12">
@@ -133,21 +135,37 @@ export default async function DishPage({ params }: { params: { id: string } }) {
                 )}
               </div>
 
-              {session && dish.available && dish.availablePortions > 0 ? (
-                <div className="border-t pt-8">
-                  <h2 className="text-xl font-semibold mb-6">Réserver ce plat</h2>
-                  <BookingForm
-                    dish={{
-                      id: dish.id,
-                      title: dish.title,
-                      price: dish.price,
-                      portions: dish.portions,
-                      availablePortions: dish.availablePortions,
-                    }}
-                    onSubmit={createBooking}
-                  />
-                </div>
-              ) : !session ? (
+              {session ? (
+                isAuthor ? (
+                  <div className="border-t pt-8 text-center">
+                    <p className="text-gray-600 mb-4">
+                      Vous êtes l'auteur de ce plat
+                    </p>
+                  </div>
+                ) : dish.available && dish.availablePortions > 0 ? (
+                  <div className="border-t pt-8">
+                    <h2 className="text-xl font-semibold mb-6">Réserver ce plat</h2>
+                    <BookingForm
+                      dish={{
+                        id: dish.id,
+                        title: dish.title,
+                        price: dish.price,
+                        portions: dish.portions,
+                        availablePortions: dish.availablePortions,
+                      }}
+                      onSubmit={createBooking}
+                    />
+                  </div>
+                ) : (
+                  <div className="border-t pt-8">
+                    <p className="text-center text-gray-600">
+                      {!dish.available
+                        ? "Ce plat n'est plus disponible"
+                        : "Toutes les portions ont été réservées"}
+                    </p>
+                  </div>
+                )
+              ) : (
                 <div className="border-t pt-8 text-center">
                   <p className="text-gray-600 mb-4">
                     Connectez-vous pour réserver ce plat
@@ -155,18 +173,6 @@ export default async function DishPage({ params }: { params: { id: string } }) {
                   <Button asChild>
                     <Link href="/login">Se connecter</Link>
                   </Button>
-                </div>
-              ) : !dish.available ? (
-                <div className="border-t pt-8">
-                  <p className="text-center text-gray-600">
-                    Ce plat n'est plus disponible
-                  </p>
-                </div>
-              ) : (
-                <div className="border-t pt-8">
-                  <p className="text-center text-gray-600">
-                    Toutes les portions ont été réservées
-                  </p>
                 </div>
               )}
             </div>

@@ -15,8 +15,8 @@ interface DishCardProps {
     images: string[];
     available: boolean;
     portions: number;
-    userId: string;
     user: {
+      id: string;
       name: string;
       building: {
         name: string;
@@ -36,7 +36,7 @@ export function DishCard({
   className,
   imageClassName 
 }: DishCardProps) {
-  const isAuthor = currentUserId === dish.userId;
+  const isAuthor = currentUserId === dish.user.id;
 
   return (
     <div className={cn(

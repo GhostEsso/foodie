@@ -41,24 +41,38 @@ export function DishForm() {
     setIsLoading(true);
     setError("");
 
-    const formData = new FormData(e.currentTarget);
-    
-    // Ajouter les images au FormData
-    imageFiles.forEach((file) => {
-      formData.append("images", file);
-    });
-
-    const data = {
-      title: formData.get("title"),
-      description: formData.get("description"),
-      price: parseFloat(formData.get("price") as string),
-      portions: parseInt(formData.get("portions") as string),
-      ingredients: ingredients.filter(Boolean),
-      available: true,
-      images: [], // Les URLs des images seront ajoutées par le serveur
-    };
-
     try {
+      // Uploader les images d'abord
+      const uploadedImages = await Promise.all(
+        imageFiles.map(async (file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+          
+          const response = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error("Erreur lors de l'upload des images");
+          }
+
+          const data = await response.json();
+          return data.url;
+        })
+      );
+
+      const formData = new FormData(e.currentTarget);
+      const data = {
+        title: formData.get("title"),
+        description: formData.get("description"),
+        price: parseFloat(formData.get("price") as string),
+        portions: parseInt(formData.get("portions") as string),
+        ingredients: ingredients.filter(Boolean),
+        available: true,
+        images: uploadedImages,
+      };
+
       const response = await fetch("/api/dishes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

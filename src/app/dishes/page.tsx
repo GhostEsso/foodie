@@ -79,6 +79,7 @@ async function getDishes(searchParams: SearchParams) {
     include: {
       user: {
         select: {
+          id: true,
           name: true,
           building: {
             select: {
