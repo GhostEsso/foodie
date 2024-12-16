@@ -1,9 +1,10 @@
 "use client";
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu, X, ChevronDown, Settings, LogOut, User } from 'lucide-react';
 import { NotificationMenu } from './notifications/notification-menu';
+import { usePathname } from 'next/navigation';
 
 function NavLinks({ session }: { session: any }) {
   return (
@@ -83,6 +84,7 @@ function UserMenu({ session }: { session: any }) {
                     method: "POST",
                   });
                   if (response.ok) {
+                    localStorage.removeItem("isAdminLoggedIn");
                     window.location.href = "/";
                   }
                 } catch (error) {
@@ -107,6 +109,21 @@ function UserMenu({ session }: { session: any }) {
 
 export function Header({ session }: { session: any }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const pathname = usePathname();
+  const isAdminPage = pathname?.startsWith('/admin');
+  const isAdminLoginPage = pathname === '/admin/login';
+
+  useEffect(() => {
+    const adminStatus = localStorage.getItem("isAdminLoggedIn");
+    setIsAdmin(adminStatus === "true");
+  }, []);
+
+  useEffect(() => {
+    if (isAdminPage && !isAdmin && !isAdminLoginPage) {
+      window.location.href = '/admin/login';
+    }
+  }, [isAdminPage, isAdmin, isAdminLoginPage]);
 
   return (
     <header className="bg-white border-b">
@@ -117,12 +134,21 @@ export function Header({ session }: { session: any }) {
               Foody
             </Link>
             <div className="hidden sm:ml-6 sm:flex sm:items-center">
-              <NavLinks session={session} />
+              {!isAdminPage && <NavLinks session={session} />}
             </div>
           </div>
           <div className="flex items-center">
             <div className="hidden sm:flex items-center">
-              {session ? (
+              {isAdminPage ? (
+                isAdmin && !isAdminLoginPage && (
+                  <Link
+                    href="/admin/dashboard"
+                    className="text-gray-900 hover:text-primary-600 px-3 py-2 text-sm font-medium"
+                  >
+                    Dashboard Admin
+                  </Link>
+                )
+              ) : session ? (
                 <>
                   <NotificationMenu />
                   <UserMenu session={session} />
@@ -166,8 +192,19 @@ export function Header({ session }: { session: any }) {
           } pb-3 transition-all duration-200 ease-in-out`}
         >
           <div className="flex flex-col space-y-2">
-            <NavLinks session={session} />
-            {session ? (
+            {!isAdminPage && <NavLinks session={session} />}
+            {isAdminPage ? (
+              isAdmin && !isAdminLoginPage && (
+                <div className="border-t pt-3 mt-3">
+                  <Link
+                    href="/admin/dashboard"
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900"
+                  >
+                    Dashboard Admin
+                  </Link>
+                </div>
+              )
+            ) : session ? (
               <div className="border-t pt-3 mt-3">
                 <Link
                   href="/settings"
@@ -190,6 +227,7 @@ export function Header({ session }: { session: any }) {
                       method: "POST",
                     });
                     if (response.ok) {
+                      localStorage.removeItem("isAdminLoggedIn");
                       window.location.href = "/";
                     }
                   } catch (error) {
@@ -206,20 +244,22 @@ export function Header({ session }: { session: any }) {
                 </form>
               </div>
             ) : (
-              <div className="border-t pt-3 mt-3 flex flex-col space-y-2">
-                <Link
-                  href="/login"
-                  className="text-gray-900 hover:text-primary-600 px-3 py-2 text-sm font-medium"
-                >
-                  Connexion
-                </Link>
-                <Link
-                  href="/signup"
-                  className="bg-primary-600 text-white hover:bg-primary-700 px-3 py-2 rounded-md text-sm font-medium mx-3"
-                >
-                  Inscription
-                </Link>
-              </div>
+              !isAdminPage && (
+                <div className="border-t pt-3 mt-3 flex flex-col space-y-2">
+                  <Link
+                    href="/login"
+                    className="text-gray-900 hover:text-primary-600 px-3 py-2 text-sm font-medium"
+                  >
+                    Connexion
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="bg-primary-600 text-white hover:bg-primary-700 px-3 py-2 rounded-md text-sm font-medium mx-3"
+                  >
+                    Inscription
+                  </Link>
+                </div>
+              )
             )}
           </div>
         </div>
