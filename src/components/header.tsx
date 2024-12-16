@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X, ChevronDown, Settings, LogOut } from 'lucide-react';
+import { Menu, X, ChevronDown, Settings, LogOut, User } from 'lucide-react';
 
 function NavLinks({ session }: { session: any }) {
   return (
@@ -42,7 +42,12 @@ function UserMenu({ session }: { session: any }) {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900"
       >
-        <span>{session.name}</span>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
+            <User className="h-5 w-5 text-primary-600" />
+          </div>
+          <span>{session.name}</span>
+        </div>
         <ChevronDown className="h-4 w-4" />
       </button>
 
