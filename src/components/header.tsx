@@ -67,7 +67,19 @@ function UserMenu({ session }: { session: any }) {
                 <Settings className="h-4 w-4" />
                 Paramètres
               </Link>
-              <form action="/api/auth/logout" method="POST">
+              <form action="/api/auth/logout" method="POST" onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  const response = await fetch("/api/auth/logout", {
+                    method: "POST",
+                  });
+                  if (response.ok) {
+                    window.location.href = "/";
+                  }
+                } catch (error) {
+                  console.error("Erreur lors de la déconnexion:", error);
+                }
+              }}>
                 <button
                   type="submit"
                   className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -152,7 +164,19 @@ export function Header({ session }: { session: any }) {
                   <Settings className="h-4 w-4" />
                   Paramètres
                 </Link>
-                <form action="/api/auth/logout" method="POST" className="mt-2">
+                <form action="/api/auth/logout" method="POST" onSubmit={async (e) => {
+                  e.preventDefault();
+                  try {
+                    const response = await fetch("/api/auth/logout", {
+                      method: "POST",
+                    });
+                    if (response.ok) {
+                      window.location.href = "/";
+                    }
+                  } catch (error) {
+                    console.error("Erreur lors de la déconnexion:", error);
+                  }
+                }}>
                   <button
                     type="submit"
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:text-gray-900"
