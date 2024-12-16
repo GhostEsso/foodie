@@ -4,15 +4,13 @@ import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import Button from "../ui/button";
+import { Search } from "lucide-react";
 
 interface DishFiltersProps {
   defaultValues?: {
     search?: string;
     available?: string;
     sort?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    date?: string;
   };
 }
 
@@ -46,91 +44,75 @@ export function DishFilters({ defaultValues = {} }: DishFiltersProps) {
     });
   };
 
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const params = new URLSearchParams(searchParams);
+
+    if (value) {
+      params.set("search", value);
+    } else {
+      params.delete("search");
+    }
+
+    startTransition(() => {
+      router.push(`/dishes?${params.toString()}`);
+    });
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Recherche et filtres principaux */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Barre de recherche */}
+      <div className="relative">
+        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+          <Search className="h-5 w-5 text-gray-400" />
+        </div>
         <input
           type="text"
           name="search"
           placeholder="Rechercher un plat..."
           defaultValue={defaultValues.search}
-          className="rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
+          onChange={handleSearch}
+          className="w-full pl-10 pr-4 py-2 rounded-xl border-gray-200 focus:border-primary-500 focus:ring-primary-500"
         />
+      </div>
 
+      <div className="flex flex-wrap gap-4">
+        {/* Disponibilité */}
         <select
           name="available"
           defaultValue={defaultValues.available}
-          className="rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
+          className="rounded-xl border-gray-200 focus:border-primary-500 focus:ring-primary-500 bg-white py-2 px-4 text-sm"
         >
           <option value="">Tous les plats</option>
           <option value="true">Disponibles uniquement</option>
         </select>
 
+        {/* Tri */}
         <select
           name="sort"
           defaultValue={defaultValues.sort}
-          className="rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
+          className="rounded-xl border-gray-200 focus:border-primary-500 focus:ring-primary-500 bg-white py-2 px-4 text-sm"
         >
           <option value="recent">Plus récents</option>
           <option value="price-asc">Prix croissant</option>
           <option value="price-desc">Prix décroissant</option>
         </select>
-      </div>
 
-      {/* Filtres avancés */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
-            Fourchette de prix
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="number"
-              name="minPrice"
-              placeholder="Min"
-              min="0"
-              step="0.01"
-              defaultValue={defaultValues.minPrice}
-              className="rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
-            />
-            <input
-              type="number"
-              name="maxPrice"
-              placeholder="Max"
-              min="0"
-              step="0.01"
-              defaultValue={defaultValues.maxPrice}
-              className="rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
-            />
-          </div>
+        {/* Boutons */}
+        <div className="flex gap-2 ml-auto">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleReset}
+            disabled={isPending}
+          >
+            Réinitialiser
+          </Button>
+          <Button type="submit" size="sm" disabled={isPending}>
+            Appliquer
+          </Button>
         </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
-            Date de disponibilité
-          </label>
-          <input
-            type="date"
-            name="date"
-            defaultValue={defaultValues.date}
-            className="w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
-          />
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-4">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={handleReset}
-          disabled={isPending}
-        >
-          Réinitialiser
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          Appliquer les filtres
-        </Button>
       </div>
     </form>
   );

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { getSession } from "../../../lib/auth";
+// import { Server } from 'socket.io';
 
 export async function GET() {
   try {
@@ -52,10 +53,18 @@ export async function POST(request: Request) {
 
     const { dishId, portions, pickupTime } = await request.json();
 
-    // Récupérer le prix du plat
     const dish = await prisma.dish.findUnique({
       where: { id: dishId },
-      select: { price: true }
+      select: { 
+        price: true,
+        userId: true,
+        title: true,
+        user: {
+          select: {
+            name: true
+          }
+        }
+      }
     });
 
     if (!dish) {
@@ -64,14 +73,37 @@ export async function POST(request: Request) {
 
     const booking = await prisma.booking.create({
       data: {
-        userId: session.id,
         dishId,
+        userId: session.id,
         portions,
         pickupTime: new Date(pickupTime),
-        status: "confirmed",
         total: dish.price * portions,
+        status: 'pending'
+      },
+      include: {
+        user: true,
+        dish: true,
       },
     });
+
+    // Créer une notification pour le propriétaire du plat
+    const notification = await prisma.notification.create({
+      data: {
+        type: "BOOKING_CREATED",
+        message: `${session.name} a réservé ${portions} portion${portions > 1 ? 's' : ''} de votre plat "${dish.title}"`,
+        userId: dish.userId,
+        isRead: false,
+      },
+    });
+
+    // Commenté temporairement
+    // const io = global.io as Server;
+    // if (io) {
+    //   console.log("Émission de la notification pour l'utilisateur:", dish.userId);
+    //   io.to(dish.userId).emit('notification', notification);
+    // } else {
+    //   console.warn("Socket.IO n'est pas initialisé");
+    // }
 
     return NextResponse.json(booking);
   } catch (error) {

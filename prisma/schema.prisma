@@ -22,6 +22,8 @@ model User {
   orders     Order[]
   bookings   Booking[]
   messages   Message[]
+  notifications Notification[]
+  likes      Like[]
   building   Building  @relation(fields: [buildingId], references: [id])
 
   @@unique([buildingId, apartment])
@@ -48,12 +50,14 @@ model Dish {
   images      String[]
   available   Boolean   @default(true)
   portions    Int       @default(1)
+  likesCount  Int       @default(0)
   userId      String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   bookings    Booking[]
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   orders      Order[]
+  likes       Like[]
 
   @@map("dishes")
 }
@@ -98,6 +102,31 @@ model Message {
   user      User     @relation(fields: [userId], references: [id])
 
   @@map("messages")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  type      String   // "BOOKING_CREATED", "BOOKING_CANCELLED", etc.
+  message   String
+  isRead    Boolean  @default(false)
+  userId    String   // L'utilisateur qui reçoit la notification
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  dishId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dish      Dish     @relation(fields: [dishId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dishId])
+  @@map("likes")
 }
 
 enum UserRole {

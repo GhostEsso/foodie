@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Button from "../ui/button";
 import { formatPrice } from "../../lib/utils";
 

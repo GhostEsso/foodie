@@ -1,10 +1,12 @@
-import React from "react";
+"use client";
 
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Button from "../ui/button";
 import { formatPrice } from "../../lib/utils";
 import { cn } from "../../lib/utils";
+import { Heart } from "lucide-react";
 
 interface DishCardProps {
   dish: {
@@ -15,6 +17,7 @@ interface DishCardProps {
     images: string[];
     available: boolean;
     portions: number;
+    likesCount: number;
     user: {
       id: string;
       name: string;
@@ -37,6 +40,39 @@ export function DishCard({
   imageClassName 
 }: DishCardProps) {
   const isAuthor = currentUserId === dish.user.id;
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [likesCount, setLikesCount] = useState(dish.likesCount);
+
+  useEffect(() => {
+    if (currentUserId) {
+      fetch(`/api/dishes/${dish.id}/like`)
+        .then(res => res.json())
+        .then(data => {
+          setIsLiked(data.liked);
+          setLikesCount(data.likesCount);
+        })
+        .catch(console.error);
+    }
+  }, [dish.id, currentUserId]);
+
+  const handleLike = async () => {
+    if (!currentUserId) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/dishes/${dish.id}/like`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      setIsLiked(data.liked);
+      setLikesCount(data.likesCount);
+    } catch (error) {
+      console.error('Erreur lors du like:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className={cn(
@@ -60,6 +96,24 @@ export function DishCard({
           </div>
         )}
         <div className="absolute top-4 right-4 flex gap-2">
+          {currentUserId && !isAuthor && (
+            <button
+              onClick={handleLike}
+              disabled={isLoading}
+              className={cn(
+                "p-2 rounded-full backdrop-blur-sm transition-colors flex items-center gap-1",
+                isLiked 
+                  ? "bg-red-500/90 text-white hover:bg-red-600/90" 
+                  : "bg-gray-500/90 text-white hover:bg-gray-600/90"
+              )}
+            >
+              <Heart className={cn(
+                "w-5 h-5",
+                isLiked ? "fill-current" : "stroke-current"
+              )} />
+              <span className="text-sm">{likesCount}</span>
+            </button>
+          )}
           {dish.available ? (
             <span className="bg-secondary-500/90 text-white text-sm px-3 py-1 rounded-full backdrop-blur-sm">
               {dish.portions} portions
