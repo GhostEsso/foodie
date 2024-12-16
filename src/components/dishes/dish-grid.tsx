@@ -12,6 +12,7 @@ interface DishGridProps {
   currentPage: number;
   totalPages: number;
   viewMode?: "grid" | "list";
+  currentUserId?: string | null;
 }
 
 export function DishGrid({
@@ -19,6 +20,7 @@ export function DishGrid({
   currentPage,
   totalPages,
   viewMode = "grid",
+  currentUserId,
 }: DishGridProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -80,6 +82,7 @@ export function DishGrid({
             >
               <DishCard
                 dish={dish}
+                currentUserId={currentUserId}
                 className={selectedViewMode === "list" ? "!flex gap-6" : ""}
                 imageClassName={selectedViewMode === "list" ? "!w-48 !h-48" : ""}
               />

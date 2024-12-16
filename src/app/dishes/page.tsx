@@ -152,6 +152,7 @@ export default async function DishesPage({
               currentPage={pagination.currentPage}
               totalPages={pagination.totalPages}
               viewMode={searchParams.view || "grid"}
+              currentUserId={session?.id}
             />
           ) : (
             <div className="text-center py-12">
