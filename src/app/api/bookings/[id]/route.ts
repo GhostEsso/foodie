@@ -71,6 +71,12 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         dish: {
           select: {
             userId: true,
+            title: true,
+          },
+        },
+        user: {
+          select: {
+            name: true,
           },
         },
       },
@@ -89,6 +95,23 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       where: { id: params.id },
       data: { status },
     });
+
+    // Créer une notification pour l'utilisateur qui a fait la réservation
+    try {
+      const notificationMessage = status === 'confirmed' 
+        ? `Votre réservation de ${booking.portions} portion${booking.portions > 1 ? 's' : ''} du plat "${booking.dish.title}" a été confirmée`
+        : `Votre réservation de ${booking.portions} portion${booking.portions > 1 ? 's' : ''} du plat "${booking.dish.title}" a été annulée`;
+
+      await prisma.notification.create({
+        data: {
+          type: status === 'confirmed' ? "BOOKING_CONFIRMED" : "BOOKING_CANCELLED",
+          message: notificationMessage,
+          userId: booking.userId, // L'utilisateur qui reçoit la notification est celui qui a fait la réservation
+        },
+      });
+    } catch (error) {
+      console.error("Erreur lors de la création de la notification:", error);
+    }
 
     return NextResponse.json(updatedBooking);
   } catch (error) {

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Menu, X, ChevronDown, Settings, LogOut, User } from 'lucide-react';
+import { NotificationMenu } from './notifications/notification-menu';
 
 function NavLinks({ session }: { session: any }) {
   return (
@@ -122,7 +123,10 @@ export function Header({ session }: { session: any }) {
           <div className="flex items-center">
             <div className="hidden sm:flex items-center">
               {session ? (
-                <UserMenu session={session} />
+                <>
+                  <NotificationMenu />
+                  <UserMenu session={session} />
+                </>
               ) : (
                 <>
                   <Link
