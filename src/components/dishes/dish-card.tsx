@@ -105,7 +105,7 @@ export function DishCard({
                 className="flex-1"
                 asChild
               >
-                <Link href={`/dishes/${dish.id}/book`}>
+                <Link href={`/dishes/${dish.id}`}>
                   Réserver
                 </Link>
               </Button>
