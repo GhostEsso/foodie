@@ -42,32 +42,50 @@ export function DishForm() {
     setError("");
 
     try {
-      // Uploader les images d'abord
-      const uploadedImages = await Promise.all(
-        imageFiles.map(async (file) => {
-          const formData = new FormData();
-          formData.append("file", file);
-          
-          const response = await fetch("/api/upload", {
-            method: "POST",
-            body: formData,
-          });
+      let uploadedImages: string[] = [];
 
-          if (!response.ok) {
-            throw new Error("Erreur lors de l'upload des images");
-          }
+      // Tenter l'upload des images, mais continuer même en cas d'échec
+      if (imageFiles.length > 0) {
+        try {
+          uploadedImages = await Promise.all(
+            imageFiles.map(async (file) => {
+              const formData = new FormData();
+              formData.append("file", file);
+              
+              const response = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+              });
 
-          const data = await response.json();
-          return data.url;
-        })
-      );
+              if (!response.ok) {
+                throw new Error("Erreur lors de l'upload des images");
+              }
 
-      const formData = new FormData(e.currentTarget);
+              const data = await response.json();
+              return data.url;
+            })
+          );
+        } catch (uploadError) {
+          console.error("Erreur lors de l'upload des images:", uploadError);
+          // Continuer sans les images
+        }
+      }
+
+      const formElement = e.target as HTMLFormElement;
+      const titleInput = formElement.querySelector<HTMLInputElement>('#title');
+      const descriptionInput = formElement.querySelector<HTMLTextAreaElement>('#description');
+      const priceInput = formElement.querySelector<HTMLInputElement>('#price');
+      const portionsInput = formElement.querySelector<HTMLInputElement>('#portions');
+
+      if (!titleInput || !descriptionInput || !priceInput || !portionsInput) {
+        throw new Error("Formulaire incomplet");
+      }
+
       const data = {
-        title: formData.get("title"),
-        description: formData.get("description"),
-        price: parseFloat(formData.get("price") as string),
-        portions: parseInt(formData.get("portions") as string),
+        title: titleInput.value,
+        description: descriptionInput.value,
+        price: parseFloat(priceInput.value),
+        portions: parseInt(portionsInput.value),
         ingredients: ingredients.filter(Boolean),
         available: true,
         images: uploadedImages,
@@ -80,13 +98,14 @@ export function DishForm() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Erreur lors de la création du plat");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur lors de la création du plat");
       }
 
       router.push("/dishes");
       router.refresh();
     } catch (error) {
+      console.error("Erreur:", error);
       setError(error instanceof Error ? error.message : "Une erreur est survenue");
     } finally {
       setIsLoading(false);
