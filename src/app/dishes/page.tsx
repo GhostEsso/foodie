@@ -151,17 +151,7 @@ export default async function DishesPage({
               dishes={dishes}
               currentPage={pagination.currentPage}
               totalPages={pagination.totalPages}
-              onPageChange={(page) => {
-                const params = new URLSearchParams(Object.entries(searchParams).filter(([_, v]) => v !== undefined));
-                params.set("page", page.toString());
-                window.location.search = params.toString();
-              }}
               viewMode={searchParams.view || "grid"}
-              onViewModeChange={(mode) => {
-                const params = new URLSearchParams(Object.entries(searchParams).filter(([_, v]) => v !== undefined));
-                params.set("view", mode);
-                window.location.search = params.toString();
-              }}
             />
           ) : (
             <div className="text-center py-12">

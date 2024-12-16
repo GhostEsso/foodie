@@ -1,11 +1,43 @@
+import React from "react";
 import Image from "next/image";
-import { notFound } from "next/navigation";
-import { getSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { BookingForm } from "@/components/bookings/booking-form";
-import { Button } from "@/components/ui/button";
-import { formatPrice } from "@/lib/utils";
+import { notFound, redirect } from "next/navigation";
+import { getSession } from "../../../lib/auth";
+import { prisma } from "../../../lib/prisma";
+import { BookingForm } from "../../../components/bookings/booking-form";
+import Button from "../../../components/ui/button";
+import { formatPrice } from "../../../lib/utils";
 import Link from "next/link";
+
+async function createBooking(data: { dishId: string; portions: number; pickupTime: string }): Promise<void> {
+  "use server";
+  
+  const session = await getSession();
+  if (!session) {
+    throw new Error("Non autorisé");
+  }
+
+  const dish = await prisma.dish.findUnique({
+    where: { id: data.dishId },
+    select: { price: true }
+  });
+
+  if (!dish) {
+    throw new Error("Plat non trouvé");
+  }
+
+  await prisma.booking.create({
+    data: {
+      userId: session.id,
+      dishId: data.dishId,
+      portions: data.portions,
+      pickupTime: new Date(data.pickupTime),
+      status: "confirmed",
+      total: dish.price * data.portions,
+    },
+  });
+
+  redirect("/bookings");
+}
 
 async function getDish(id: string) {
   const dish = await prisma.dish.findUnique({
@@ -112,17 +144,7 @@ export default async function DishPage({ params }: { params: { id: string } }) {
                       portions: dish.portions,
                       availablePortions: dish.availablePortions,
                     }}
-                    onSubmit={async (data) => {
-                      "use server";
-                      const response = await fetch("/api/bookings", {
-                        method: "POST",
-                        body: JSON.stringify(data),
-                      });
-                      
-                      if (!response.ok) {
-                        throw new Error("Erreur lors de la réservation");
-                      }
-                    }}
+                    onSubmit={createBooking}
                   />
                 </div>
               ) : !session ? (

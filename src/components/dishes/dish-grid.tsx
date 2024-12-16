@@ -1,33 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DishCard } from "./dish-card";
-import { Button } from "@/components/ui/button";
+import Button from "../ui/button";
 import { Grid2X2, List } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface DishGridProps {
   dishes: any[];
   currentPage: number;
   totalPages: number;
-  onPageChange: (page: number) => void;
   viewMode?: "grid" | "list";
-  onViewModeChange?: (mode: "grid" | "list") => void;
 }
 
 export function DishGrid({
   dishes,
   currentPage,
   totalPages,
-  onPageChange,
   viewMode = "grid",
-  onViewModeChange,
 }: DishGridProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedViewMode, setSelectedViewMode] = useState(viewMode);
 
   const handleViewModeChange = (mode: "grid" | "list") => {
     setSelectedViewMode(mode);
-    onViewModeChange?.(mode);
+    const params = new URLSearchParams(searchParams);
+    params.set("view", mode);
+    router.push(`/dishes?${params.toString()}`);
+  };
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("page", page.toString());
+    router.push(`/dishes?${params.toString()}`);
   };
 
   return (
@@ -88,7 +95,7 @@ export function DishGrid({
             variant="outline"
             size="sm"
             disabled={currentPage === 1}
-            onClick={() => onPageChange(currentPage - 1)}
+            onClick={() => handlePageChange(currentPage - 1)}
           >
             Précédent
           </Button>
@@ -97,7 +104,7 @@ export function DishGrid({
               key={page}
               variant={currentPage === page ? "primary" : "outline"}
               size="sm"
-              onClick={() => onPageChange(page)}
+              onClick={() => handlePageChange(page)}
             >
               {page}
             </Button>
@@ -106,7 +113,7 @@ export function DishGrid({
             variant="outline"
             size="sm"
             disabled={currentPage === totalPages}
-            onClick={() => onPageChange(currentPage + 1)}
+            onClick={() => handlePageChange(currentPage + 1)}
           >
             Suivant
           </Button>
