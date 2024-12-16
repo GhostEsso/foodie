@@ -21,6 +21,7 @@ interface SearchParams {
 const ITEMS_PER_PAGE = 9;
 
 async function getDishes(searchParams: SearchParams) {
+  const session = await getSession();
   const {
     search,
     available,
@@ -30,6 +31,12 @@ async function getDishes(searchParams: SearchParams) {
     date,
     page = "1",
   } = searchParams;
+
+  // Récupérer le bâtiment de l'utilisateur connecté
+  const userBuilding = session ? await prisma.user.findUnique({
+    where: { id: session.id },
+    select: { buildingId: true }
+  }) : null;
 
   const where: Prisma.DishWhereInput = {
     AND: [
@@ -56,6 +63,12 @@ async function getDishes(searchParams: SearchParams) {
             },
           }
         : {},
+      // Filtrer par bâtiment de l'utilisateur connecté
+      userBuilding ? {
+        user: {
+          buildingId: userBuilding.buildingId
+        }
+      } : {},
     ],
   };
 
@@ -98,15 +111,8 @@ async function getDishes(searchParams: SearchParams) {
       totalPages,
       currentPage,
     },
+    session,
   };
-}
-
-async function getBuildings() {
-  return prisma.building.findMany({
-    orderBy: {
-      name: "asc",
-    },
-  });
 }
 
 export default async function DishesPage({
@@ -114,8 +120,7 @@ export default async function DishesPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const session = await getSession();
-  const { dishes, pagination } = await getDishes(searchParams);
+  const { dishes, pagination, session } = await getDishes(searchParams);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white py-12">

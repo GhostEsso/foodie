@@ -1,92 +1,130 @@
-import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+import { PrismaClient } from "@prisma/client";
+import { hash } from "bcryptjs";
 
-const prisma = new PrismaClient()
-
-async function hashPassword(password: string) {
-  return bcrypt.hash(password, 10)
-}
+const prisma = new PrismaClient();
 
 async function main() {
-  // Créer les bâtiments
+  // Création des bâtiments
   const buildings = await Promise.all([
     prisma.building.create({
-      data: {
-        name: "Résidence Les Fleurs",
-        address: "123 rue des Fleurs, 75001 Paris",
-      },
-    }),
-    prisma.building.create({
-      data: {
-        name: "Le Marais Élégant",
-        address: "45 rue des Archives, 75004 Paris",
-      },
-    }),
-    prisma.building.create({
-      data: {
-        name: "Tour Montparnasse Résidence",
-        address: "12 rue du Départ, 75015 Paris",
-      },
-    }),
-    prisma.building.create({
-      data: {
+      data: { 
         name: "Bastille Vue",
-        address: "78 rue de la Roquette, 75011 Paris",
+        address: "12 rue de la Bastille, 75011 Paris"
       },
     }),
     prisma.building.create({
-      data: {
-        name: "Montmartre Heights",
-        address: "25 rue des Abbesses, 75018 Paris",
+      data: { 
+        name: "République Résidence",
+        address: "45 place de la République, 75003 Paris"
+      },
+    }),
+    prisma.building.create({
+      data: { 
+        name: "Nation Plaza",
+        address: "8 place de la Nation, 75012 Paris"
       },
     }),
   ]);
 
-  // Créer un utilisateur
-  const hashedPassword = await hashPassword("password123")
-  const user = await prisma.user.create({
-    data: {
-      email: "test@example.com",
-      password: hashedPassword,
-      name: "John Doe",
-      buildingId: buildings[0].id,
-    },
-  })
+  // Création des utilisateurs avec leurs bâtiments respectifs
+  const users = await Promise.all([
+    prisma.user.create({
+      data: {
+        email: "chef1@example.com",
+        password: await hash("password123", 12),
+        name: "Chef Pierre",
+        buildingId: buildings[0].id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: "chef2@example.com",
+        password: await hash("password123", 12),
+        name: "Chef Marie",
+        buildingId: buildings[1].id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: "chef3@example.com",
+        password: await hash("password123", 12),
+        name: "Chef Jean",
+        buildingId: buildings[2].id,
+      },
+    }),
+  ]);
 
-  // Créer quelques plats
+  // Création des plats pour chaque utilisateur
   const dishes = await Promise.all([
+    // Plats pour Bastille Vue
     prisma.dish.create({
       data: {
-        title: "Couscous Maison",
-        description: "Délicieux couscous aux légumes et poulet",
-        price: 12.50,
-        ingredients: ["Semoule", "Poulet", "Légumes", "Épices"],
-        images: [],
-        portions: 4,
-        userId: user.id,
+        title: "Coq au Vin",
+        description: "Plat traditionnel français mijoté au vin rouge",
+        price: 15.50,
+        available: true,
+        userId: users[0].id,
       },
     }),
     prisma.dish.create({
       data: {
-        title: "Lasagnes Végétariennes",
-        description: "Lasagnes aux légumes de saison",
-        price: 10.00,
-        ingredients: ["Pâtes", "Légumes", "Sauce tomate", "Fromage"],
-        images: [],
-        portions: 6,
-        userId: user.id,
+        title: "Gratin Dauphinois",
+        description: "Pommes de terre gratinées à la crème",
+        price: 12.00,
+        available: true,
+        userId: users[0].id,
       },
     }),
-  ])
 
-  console.log("Base de données initialisée avec succès !")
+    // Plats pour République Résidence
+    prisma.dish.create({
+      data: {
+        title: "Pad Thai",
+        description: "Nouilles sautées aux légumes et crevettes",
+        price: 13.50,
+        available: true,
+        userId: users[1].id,
+      },
+    }),
+    prisma.dish.create({
+      data: {
+        title: "Curry Vert",
+        description: "Curry thaï au lait de coco",
+        price: 14.00,
+        available: true,
+        userId: users[1].id,
+      },
+    }),
+
+    // Plats pour Nation Plaza
+    prisma.dish.create({
+      data: {
+        title: "Lasagnes",
+        description: "Lasagnes maison à la bolognaise",
+        price: 16.00,
+        available: true,
+        userId: users[2].id,
+      },
+    }),
+    prisma.dish.create({
+      data: {
+        title: "Risotto aux Champignons",
+        description: "Risotto crémeux aux champignons",
+        price: 14.50,
+        available: true,
+        userId: users[2].id,
+      },
+    }),
+  ]);
+
+  console.log("Base de données ensemencée avec succès !");
 }
 
 main()
   .catch((e) => {
-    console.error(e)
-    process.exit(1)
+    console.error(e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });
