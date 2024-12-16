@@ -5,16 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import Button from "../ui/button";
 
-interface Building {
-  id: string;
-  name: string;
-}
-
 interface DishFiltersProps {
-  buildings: Building[];
   defaultValues?: {
     search?: string;
-    building?: string;
     available?: string;
     sort?: string;
     minPrice?: string;
@@ -23,7 +16,7 @@ interface DishFiltersProps {
   };
 }
 
-export function DishFilters({ buildings, defaultValues = {} }: DishFiltersProps) {
+export function DishFilters({ defaultValues = {} }: DishFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -56,7 +49,7 @@ export function DishFilters({ buildings, defaultValues = {} }: DishFiltersProps)
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Recherche et filtres principaux */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <input
           type="text"
           name="search"
@@ -64,19 +57,6 @@ export function DishFilters({ buildings, defaultValues = {} }: DishFiltersProps)
           defaultValue={defaultValues.search}
           className="rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
         />
-        
-        <select
-          name="building"
-          defaultValue={defaultValues.building}
-          className="rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
-        >
-          <option value="">Tous les bâtiments</option>
-          {buildings.map((building) => (
-            <option key={building.id} value={building.id}>
-              {building.name}
-            </option>
-          ))}
-        </select>
 
         <select
           name="available"

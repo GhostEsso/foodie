@@ -9,7 +9,6 @@ import { Prisma } from "@prisma/client";
 
 interface SearchParams {
   search?: string;
-  building?: string;
   available?: string;
   sort?: string;
   minPrice?: string;
@@ -24,7 +23,6 @@ const ITEMS_PER_PAGE = 9;
 async function getDishes(searchParams: SearchParams) {
   const {
     search,
-    building,
     available,
     sort = "recent",
     minPrice,
@@ -43,7 +41,6 @@ async function getDishes(searchParams: SearchParams) {
             ],
           }
         : {},
-      building ? { user: { buildingId: building } } : {},
       available === "true" ? { available: true } : {},
       minPrice ? { price: { gte: parseFloat(minPrice) } } : {},
       maxPrice ? { price: { lte: parseFloat(maxPrice) } } : {},
@@ -118,10 +115,7 @@ export default async function DishesPage({
   searchParams: SearchParams;
 }) {
   const session = await getSession();
-  const [{ dishes, pagination }, buildings] = await Promise.all([
-    getDishes(searchParams),
-    getBuildings(),
-  ]);
+  const { dishes, pagination } = await getDishes(searchParams);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white py-12">
@@ -141,7 +135,6 @@ export default async function DishesPage({
           {/* Filtres */}
           <div className="bg-white rounded-xl shadow-soft p-6 mb-8">
             <DishFilters
-              buildings={buildings}
               defaultValues={searchParams}
             />
           </div>
