@@ -1,9 +1,11 @@
-import { getSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { DishGrid } from "@/components/dishes/dish-grid";
-import { DishFilters } from "@/components/dishes/dish-filters";
-import { Button } from "@/components/ui/button";
+import { getSession } from "../../lib/auth";
+import { prisma } from "../../lib/prisma";
+import { DishGrid } from "../../components/dishes/dish-grid";
+import { DishFilters } from "../../components/dishes/dish-filters";
+import Button from "../../components/ui/button";
 import Link from "next/link";
+import React from "react";
+import { Prisma } from "@prisma/client";
 
 interface SearchParams {
   search?: string;
@@ -31,13 +33,13 @@ async function getDishes(searchParams: SearchParams) {
     page = "1",
   } = searchParams;
 
-  const where = {
+  const where: Prisma.DishWhereInput = {
     AND: [
       search
         ? {
             OR: [
-              { title: { contains: search, mode: "insensitive" } },
-              { description: { contains: search, mode: "insensitive" } },
+              { title: { contains: search, mode: Prisma.QueryMode.insensitive } },
+              { description: { contains: search, mode: Prisma.QueryMode.insensitive } },
             ],
           }
         : {},
@@ -60,10 +62,10 @@ async function getDishes(searchParams: SearchParams) {
     ],
   };
 
-  const orderBy = {
-    ...(sort === "price-asc" && { price: "asc" }),
-    ...(sort === "price-desc" && { price: "desc" }),
-    ...(sort === "recent" && { createdAt: "desc" }),
+  const orderBy: Prisma.DishOrderByWithRelationInput = {
+    ...(sort === "price-asc" && { price: Prisma.SortOrder.asc }),
+    ...(sort === "price-desc" && { price: Prisma.SortOrder.desc }),
+    ...(sort === "recent" && { createdAt: Prisma.SortOrder.desc }),
   };
 
   // Calculer le nombre total de plats
@@ -150,13 +152,13 @@ export default async function DishesPage({
               currentPage={pagination.currentPage}
               totalPages={pagination.totalPages}
               onPageChange={(page) => {
-                const params = new URLSearchParams(searchParams);
+                const params = new URLSearchParams(Object.entries(searchParams).filter(([_, v]) => v !== undefined));
                 params.set("page", page.toString());
                 window.location.search = params.toString();
               }}
               viewMode={searchParams.view || "grid"}
               onViewModeChange={(mode) => {
-                const params = new URLSearchParams(searchParams);
+                const params = new URLSearchParams(Object.entries(searchParams).filter(([_, v]) => v !== undefined));
                 params.set("view", mode);
                 window.location.search = params.toString();
               }}

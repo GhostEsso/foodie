@@ -8,13 +8,39 @@ async function hashPassword(password: string) {
 }
 
 async function main() {
-  // Créer un bâtiment
-  const building = await prisma.building.create({
-    data: {
-      name: "Résidence Les Fleurs",
-      address: "123 rue des Fleurs, 75001 Paris",
-    },
-  })
+  // Créer les bâtiments
+  const buildings = await Promise.all([
+    prisma.building.create({
+      data: {
+        name: "Résidence Les Fleurs",
+        address: "123 rue des Fleurs, 75001 Paris",
+      },
+    }),
+    prisma.building.create({
+      data: {
+        name: "Le Marais Élégant",
+        address: "45 rue des Archives, 75004 Paris",
+      },
+    }),
+    prisma.building.create({
+      data: {
+        name: "Tour Montparnasse Résidence",
+        address: "12 rue du Départ, 75015 Paris",
+      },
+    }),
+    prisma.building.create({
+      data: {
+        name: "Bastille Vue",
+        address: "78 rue de la Roquette, 75011 Paris",
+      },
+    }),
+    prisma.building.create({
+      data: {
+        name: "Montmartre Heights",
+        address: "25 rue des Abbesses, 75018 Paris",
+      },
+    }),
+  ]);
 
   // Créer un utilisateur
   const hashedPassword = await hashPassword("password123")
@@ -23,7 +49,7 @@ async function main() {
       email: "test@example.com",
       password: hashedPassword,
       name: "John Doe",
-      buildingId: building.id,
+      buildingId: buildings[0].id,
     },
   })
 
