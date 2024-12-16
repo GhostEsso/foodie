@@ -3,11 +3,12 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { getSession } from '../lib/auth'
 import React from 'react'
+import { Header } from '../components/header'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Neighbours Foods - Partagez des plats avec vos voisins',
+  title: 'Foody - Partagez des plats avec vos voisins',
   description: 'Découvrez et partagez des plats faits maison avec vos voisins',
 }
 
@@ -21,72 +22,7 @@ export default async function RootLayout({
   return (
     <html lang="fr" className={inter.className}>
       <body className="flex flex-col min-h-screen">
-        {/* Navigation */}
-        <header className="bg-white border-b">
-          <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex">
-                <Link href="/" className="text-2xl font-bold text-primary-600">
-                  Foody
-                </Link>
-                <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                  <Link
-                    href="/dishes"
-                    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-primary-600"
-                  >
-                    Plats disponibles
-                  </Link>
-                  {session && (
-                    <>
-                      <Link
-                        href="/dishes/new"
-                        className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-primary-600"
-                      >
-                        Proposer un plat
-                      </Link>
-                      <Link
-                        href="/bookings"
-                        className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-primary-600"
-                      >
-                        Mes réservations
-                      </Link>
-                    </>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center">
-                {session ? (
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm text-gray-700">{session.name}</span>
-                    <form action="/api/auth/logout" method="POST">
-                      <button
-                        type="submit"
-                        className="text-gray-900 hover:text-primary-600 px-3 py-2 text-sm font-medium"
-                      >
-                        Déconnexion
-                      </button>
-                    </form>
-                  </div>
-                ) : (
-                  <>
-                    <Link
-                      href="/login"
-                      className="text-gray-900 hover:text-primary-600 px-3 py-2 text-sm font-medium"
-                    >
-                      Connexion
-                    </Link>
-                    <Link
-                      href="/signup"
-                      className="bg-primary-600 text-white hover:bg-primary-700 px-3 py-2 rounded-md text-sm font-medium ml-3"
-                    >
-                      Inscription
-                    </Link>
-                  </>
-                )}
-              </div>
-            </div>
-          </nav>
-        </header>
+        <Header session={session} />
 
         {/* Main Content */}
         <main className="flex-grow">
@@ -102,7 +38,7 @@ export default async function RootLayout({
                   À propos
                 </h3>
                 <p className="mt-4 text-base text-gray-500">
-                  Neighbours Foods est une plateforme qui permet de partager des plats faits maison avec vos voisins.
+                  Foody est une plateforme qui permet de partager des plats faits maison avec vos voisins.
                 </p>
               </div>
               <div>
@@ -142,7 +78,7 @@ export default async function RootLayout({
             </div>
             <div className="mt-8 border-t border-gray-200 pt-8 text-center">
               <p className="text-base text-gray-400">
-                &copy; {new Date().getFullYear()} Neighbours Foods. Tous droits réservés.
+                &copy; {new Date().getFullYear()} Foody. Tous droits réservés.
               </p>
             </div>
           </div>
