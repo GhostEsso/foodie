@@ -28,11 +28,18 @@ export function SignUpForm() {
 
     const formData = new FormData(e.currentTarget);
     const data = {
-      email: formData.get("email"),
-      password: formData.get("password"),
-      name: formData.get("name"),
-      buildingId: formData.get("buildingId"),
+      email: formData.get("email")?.toString(),
+      password: formData.get("password")?.toString(),
+      name: formData.get("name")?.toString(),
+      buildingId: formData.get("buildingId")?.toString(),
+      apartment: formData.get("apartment")?.toString(),
     };
+
+    if (!data.email || !data.password || !data.name || !data.buildingId || !data.apartment) {
+      setError("Tous les champs sont requis");
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/auth/signup", {
@@ -41,13 +48,15 @@ export function SignUpForm() {
         body: JSON.stringify(data),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Erreur lors de l'inscription");
+        throw new Error(responseData.error || responseData.details || "Erreur lors de l'inscription");
       }
 
       window.location.href = "/login?message=Inscription réussie ! Vous pouvez maintenant vous connecter.";
     } catch (error) {
+      console.error("Erreur d'inscription:", error);
       setError(error instanceof Error ? error.message : "Une erreur est survenue");
     } finally {
       setIsLoading(false);
@@ -119,6 +128,20 @@ export function SignUpForm() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label htmlFor="apartment" className="block text-sm font-medium text-gray-700 mb-1">
+            Numéro d'appartement
+          </label>
+          <input
+            type="text"
+            id="apartment"
+            name="apartment"
+            required
+            placeholder="Ex: A101"
+            className="w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
+          />
         </div>
 
         <Button type="submit" className="w-full" isLoading={isLoading}>

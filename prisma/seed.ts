@@ -34,6 +34,7 @@ async function main() {
         password: await hash("password123", 12),
         name: "Chef Pierre",
         buildingId: buildings[0].id,
+        apartment: "A101",
       },
     }),
     prisma.user.create({
@@ -42,6 +43,7 @@ async function main() {
         password: await hash("password123", 12),
         name: "Chef Marie",
         buildingId: buildings[1].id,
+        apartment: "B202",
       },
     }),
     prisma.user.create({
@@ -50,6 +52,7 @@ async function main() {
         password: await hash("password123", 12),
         name: "Chef Jean",
         buildingId: buildings[2].id,
+        apartment: "C303",
       },
     }),
   ]);

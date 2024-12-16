@@ -38,21 +38,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const data = await request.json();
-    const { title, description, price, portions, ingredients, available, images } = data;
+    const formData = await request.json();
+    const uploadedImages: string[] = [];
 
-    // Vérifier le nombre d'images
-    if (images && images.length > 3) {
-      return NextResponse.json(
-        { error: "Vous ne pouvez pas ajouter plus de 3 images" },
-        { status: 400 }
-      );
-    }
-
-    // Upload des images
-    const uploadedImages = [];
-    if (images && images.length > 0) {
-      for (const image of images) {
+    try {
+      // Upload des images
+      for (const image of formData.images || []) {
         try {
           const imageUrl = await uploadImage(image);
           uploadedImages.push(imageUrl);
@@ -60,16 +51,18 @@ export async function POST(request: Request) {
           console.error("Erreur lors de l'upload de l'image:", error);
         }
       }
+    } catch (error) {
+      console.error("Erreur lors de l'upload des images:", error);
     }
 
     const dish = await prisma.dish.create({
       data: {
-        title,
-        description,
-        price,
-        portions,
-        ingredients,
-        available,
+        title: formData.title,
+        description: formData.description,
+        price: formData.price,
+        portions: formData.portions,
+        ingredients: formData.ingredients,
+        available: formData.available,
         images: uploadedImages,
         userId: session.id,
       },
