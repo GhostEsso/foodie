@@ -16,12 +16,14 @@ interface DishCardProps {
     available: boolean;
     portions: number;
     user: {
+      id: string;
       name: string;
       building: {
         name: string;
       };
     };
   };
+  currentUserId?: string | null;
   showActions?: boolean;
   className?: string;
   imageClassName?: string;
@@ -29,10 +31,13 @@ interface DishCardProps {
 
 export function DishCard({ 
   dish, 
+  currentUserId,
   showActions = true, 
   className,
   imageClassName 
 }: DishCardProps) {
+  const isAuthor = currentUserId === dish.user.id;
+
   return (
     <div className={cn(
       "bg-white rounded-2xl shadow-soft overflow-hidden group",
@@ -99,7 +104,7 @@ export function DishCard({
                 Voir les détails
               </Link>
             </Button>
-            {dish.available && (
+            {dish.available && !isAuthor && (
               <Button
                 size="sm"
                 className="flex-1"

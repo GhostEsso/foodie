@@ -9,7 +9,6 @@ import { Prisma } from "@prisma/client";
 
 interface SearchParams {
   search?: string;
-  building?: string;
   available?: string;
   sort?: string;
   minPrice?: string;
@@ -22,9 +21,9 @@ interface SearchParams {
 const ITEMS_PER_PAGE = 9;
 
 async function getDishes(searchParams: SearchParams) {
+  const session = await getSession();
   const {
     search,
-    building,
     available,
     sort = "recent",
     minPrice,
@@ -32,6 +31,12 @@ async function getDishes(searchParams: SearchParams) {
     date,
     page = "1",
   } = searchParams;
+
+  // Récupérer le bâtiment de l'utilisateur connecté
+  const userBuilding = session ? await prisma.user.findUnique({
+    where: { id: session.id },
+    select: { buildingId: true }
+  }) : null;
 
   const where: Prisma.DishWhereInput = {
     AND: [
@@ -43,7 +48,6 @@ async function getDishes(searchParams: SearchParams) {
             ],
           }
         : {},
-      building ? { user: { buildingId: building } } : {},
       available === "true" ? { available: true } : {},
       minPrice ? { price: { gte: parseFloat(minPrice) } } : {},
       maxPrice ? { price: { lte: parseFloat(maxPrice) } } : {},
@@ -59,6 +63,12 @@ async function getDishes(searchParams: SearchParams) {
             },
           }
         : {},
+      // Filtrer par bâtiment de l'utilisateur connecté
+      userBuilding ? {
+        user: {
+          buildingId: userBuilding.buildingId
+        }
+      } : {},
     ],
   };
 
@@ -79,6 +89,7 @@ async function getDishes(searchParams: SearchParams) {
     include: {
       user: {
         select: {
+          id: true,
           name: true,
           building: {
             select: {
@@ -100,15 +111,8 @@ async function getDishes(searchParams: SearchParams) {
       totalPages,
       currentPage,
     },
+    session,
   };
-}
-
-async function getBuildings() {
-  return prisma.building.findMany({
-    orderBy: {
-      name: "asc",
-    },
-  });
 }
 
 export default async function DishesPage({
@@ -116,11 +120,7 @@ export default async function DishesPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const session = await getSession();
-  const [{ dishes, pagination }, buildings] = await Promise.all([
-    getDishes(searchParams),
-    getBuildings(),
-  ]);
+  const { dishes, pagination, session } = await getDishes(searchParams);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white py-12">
@@ -140,7 +140,6 @@ export default async function DishesPage({
           {/* Filtres */}
           <div className="bg-white rounded-xl shadow-soft p-6 mb-8">
             <DishFilters
-              buildings={buildings}
               defaultValues={searchParams}
             />
           </div>
@@ -152,6 +151,7 @@ export default async function DishesPage({
               currentPage={pagination.currentPage}
               totalPages={pagination.totalPages}
               viewMode={searchParams.view || "grid"}
+              currentUserId={session?.id}
             />
           ) : (
             <div className="text-center py-12">
