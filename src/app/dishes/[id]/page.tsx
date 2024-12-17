@@ -7,6 +7,7 @@ import { BookingForm } from "../../../components/bookings/booking-form";
 import Button from "../../../components/ui/button";
 import { formatPrice } from "../../../lib/utils";
 import Link from "next/link";
+import { MessageSquare } from "lucide-react";
 
 async function createBooking(data: { dishId: string; portions: number; pickupTime: string }): Promise<void> {
   "use server";
@@ -188,7 +189,37 @@ export default async function DishPage({ params }: { params: { id: string } }) {
                   </div>
                 ) : dish.available && dish.availablePortions > 0 ? (
                   <div className="border-t pt-8">
-                    <h2 className="text-xl font-semibold mb-6">Réserver ce plat</h2>
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-xl font-semibold">Réserver ce plat</h2>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch("/api/conversations", {
+                              method: "POST",
+                              headers: {
+                                "Content-Type": "application/json",
+                              },
+                              body: JSON.stringify({
+                                dishId: dish.id,
+                                otherUserId: dish.user.id,
+                              }),
+                            });
+                            
+                            if (response.ok) {
+                              const conversation = await response.json();
+                              window.location.href = `/messages?conversation=${conversation.id}`;
+                            }
+                          } catch (error) {
+                            console.error("Erreur lors de la création de la conversation:", error);
+                          }
+                        }}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Contacter le vendeur
+                      </Button>
+                    </div>
                     <BookingForm
                       dish={{
                         id: dish.id,

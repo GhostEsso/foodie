@@ -26,6 +26,9 @@ model User {
   notifications Notification[]
   likes      Like[]
   building   Building  @relation(fields: [buildingId], references: [id])
+  sentMessages Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  conversations Conversation[] @relation("UserConversations")
 
   @@unique([buildingId, apartment])
   @@map("users")
@@ -97,12 +100,16 @@ model Order {
 }
 
 model Message {
-  id        String   @id @default(uuid())
-  content   String
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
+  id             String       @id @default(uuid())
+  content        String
+  senderId       String
+  receiverId     String
+  conversationId String
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+  receiver       User         @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
 
   @@map("messages")
 }
@@ -130,6 +137,18 @@ model Like {
 
   @@unique([userId, dishId])
   @@map("likes")
+}
+
+model Conversation {
+  id        String    @id @default(uuid())
+  dishId    String
+  dish      Dish      @relation(fields: [dishId], references: [id])
+  users     User[]    @relation("UserConversations")
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("conversations")
 }
 
 enum UserRole {
