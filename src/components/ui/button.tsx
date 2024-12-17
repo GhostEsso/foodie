@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { ButtonHTMLAttributes, forwardRef } from "react";
 import { Slot } from "@radix-ui/react-slot";

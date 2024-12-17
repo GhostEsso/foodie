@@ -1,6 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "../../../../lib/prisma";
+import { getSession } from "../../../../lib/auth";
 
 interface RouteParams {
   params: {
@@ -9,13 +9,14 @@ interface RouteParams {
 }
 
 // Récupérer un plat spécifique
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(_request: Request, { params }: RouteParams) {
   try {
     const dish = await prisma.dish.findUnique({
       where: { id: params.id },
       include: {
         user: {
           select: {
+            id: true,
             name: true,
             building: {
               select: {
@@ -49,8 +50,8 @@ export async function GET(request: Request, { params }: RouteParams) {
 // Mettre à jour un plat
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
-    const { userId } = auth();
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
@@ -64,7 +65,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "Plat non trouvé" }, { status: 404 });
     }
 
-    if (dish.userId !== userId) {
+    if (dish.userId !== session.id) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
@@ -80,10 +81,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 }
 
 // Supprimer un plat
-export async function DELETE(request: Request, { params }: RouteParams) {
+export async function DELETE(_request: Request, { params }: RouteParams) {
   try {
-    const { userId } = auth();
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
@@ -96,7 +97,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "Plat non trouvé" }, { status: 404 });
     }
 
-    if (dish.userId !== userId) {
+    if (dish.userId !== session.id) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 

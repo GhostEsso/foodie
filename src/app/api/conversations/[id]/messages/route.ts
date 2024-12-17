@@ -9,7 +9,7 @@ interface RouteParams {
 }
 
 // Récupérer les messages d'une conversation
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(_request: Request, { params }: RouteParams) {
   try {
     const session = await getSession();
     if (!session) {

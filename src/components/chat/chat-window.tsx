@@ -31,15 +31,23 @@ export function ChatWindow({ conversationId, currentUserId, otherUser, dish }: C
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchMessages();
-    const interval = setInterval(fetchMessages, 5000); // Polling toutes les 5 secondes
+    const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
   }, [conversationId]);
 
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > 0 && messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      const isScrolledToBottom = container.scrollHeight - container.scrollTop === container.clientHeight;
+      
+      if (isScrolledToBottom) {
+        scrollToBottom();
+      }
+    }
   }, [messages]);
 
   const fetchMessages = async () => {
@@ -55,7 +63,9 @@ export function ChatWindow({ conversationId, currentUserId, otherUser, dish }: C
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,7 +87,8 @@ export function ChatWindow({ conversationId, currentUserId, otherUser, dish }: C
 
       if (response.ok) {
         setNewMessage("");
-        fetchMessages();
+        await fetchMessages();
+        scrollToBottom();
       }
     } catch (error) {
       console.error("Erreur lors de l'envoi du message:", error);
@@ -88,14 +99,18 @@ export function ChatWindow({ conversationId, currentUserId, otherUser, dish }: C
 
   return (
     <div className="flex flex-col h-full">
-      {/* En-tête */}
-      <div className="p-4 border-b">
+      {/* En-tête fixe */}
+      <div className="p-4 border-b bg-white">
         <h3 className="font-medium text-gray-900">{otherUser.name}</h3>
         <p className="text-sm text-gray-500">{dish.title}</p>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Zone de messages scrollable */}
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+        style={{ maxHeight: 'calc(100vh - 13rem)' }}
+      >
         {messages.map((message) => (
           <div
             key={message.id}
@@ -126,12 +141,11 @@ export function ChatWindow({ conversationId, currentUserId, otherUser, dish }: C
             </div>
           </div>
         ))}
-        <div ref={messagesEndRef} />
       </div>
 
-      {/* Formulaire d'envoi */}
-      <form onSubmit={handleSubmit} className="p-4 border-t">
-        <div className="flex gap-2">
+      {/* Formulaire d'envoi fixe */}
+      <div className="p-4 border-t bg-white">
+        <form onSubmit={handleSubmit} className="flex gap-2">
           <input
             type="text"
             value={newMessage}
@@ -143,8 +157,8 @@ export function ChatWindow({ conversationId, currentUserId, otherUser, dish }: C
           <Button type="submit" disabled={isLoading || !newMessage.trim()}>
             <Send className="h-4 w-4" />
           </Button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 } 

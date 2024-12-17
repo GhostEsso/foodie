@@ -20,9 +20,8 @@ model User {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   dishes     Dish[]
-  orders     Order[]
   bookings   Booking[]
-  messages   Message[]
+  orders     Order[]
   notifications Notification[]
   likes      Like[]
   building   Building  @relation(fields: [buildingId], references: [id])
@@ -64,6 +63,7 @@ model Dish {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   orders      Order[]
   likes       Like[]
+  conversations Conversation[]
 
   @@map("dishes")
 }

@@ -23,7 +23,11 @@ interface Conversation {
   };
 }
 
-export function ConversationList() {
+interface ConversationListProps {
+  onSelectConversation?: (conversation: Conversation) => void;
+}
+
+export function ConversationList({ onSelectConversation }: ConversationListProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,6 +48,11 @@ export function ConversationList() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleConversationClick = (conversation: Conversation) => {
+    setSelectedConversation(conversation.id);
+    onSelectConversation?.(conversation);
   };
 
   if (isLoading) {
@@ -67,7 +76,7 @@ export function ConversationList() {
           className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
             selectedConversation === conversation.id ? "bg-primary-50" : ""
           }`}
-          onClick={() => setSelectedConversation(conversation.id)}
+          onClick={() => handleConversationClick(conversation)}
         >
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0">
