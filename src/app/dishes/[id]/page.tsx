@@ -1,100 +1,87 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
-import { notFound, redirect } from "next/navigation";
-import { getSession } from "../../../lib/auth";
-import { prisma } from "../../../lib/prisma";
+import { notFound } from "next/navigation";
+// import { getSession } from "../../../lib/auth";
+// import { prisma } from "../../../lib/prisma";
 import { BookingForm } from "../../../components/bookings/booking-form";
 import Button from "../../../components/ui/button";
 import { formatPrice } from "../../../lib/utils";
 import Link from "next/link";
+import { MessageSquare } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-async function createBooking(data: { dishId: string; portions: number; pickupTime: string }): Promise<void> {
-  "use server";
-  
-  const session = await getSession();
-  if (!session) {
-    throw new Error("Non autorisé");
+interface DishPageProps {
+  params: { id: string };
+}
+
+export default function DishPage({ params }: DishPageProps) {
+  const router = useRouter();
+  const [dish, setDish] = React.useState<any>(null);
+  const [session, setSession] = React.useState<any>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [sessionRes, dishRes] = await Promise.all([
+          fetch("/api/auth/session"),
+          fetch(`/api/dishes/${params.id}`)
+        ]);
+
+        const sessionData = await sessionRes.json();
+        const dishData = await dishRes.json();
+
+        if (!dishData || dishData.error) {
+          notFound();
+        }
+
+        setSession(sessionData);
+        setDish(dishData);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des données:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [params.id]);
+
+  if (isLoading) {
+    return <div>Chargement...</div>;
   }
-
-  const dish = await prisma.dish.findUnique({
-    where: { id: data.dishId },
-    select: { price: true }
-  });
 
   if (!dish) {
-    throw new Error("Plat non trouvé");
+    return notFound();
   }
 
-  await prisma.booking.create({
-    data: {
-      userId: session.id,
-      dishId: data.dishId,
-      portions: data.portions,
-      pickupTime: new Date(data.pickupTime),
-      status: "confirmed",
-      total: dish.price * data.portions,
-    },
-  });
-
-  redirect("/bookings");
-}
-
-async function getDish(id: string) {
-  const dish = await prisma.dish.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      price: true,
-      portions: true,
-      available: true,
-      images: true,
-      ingredients: true,
-      availableFrom: true,
-      availableTo: true,
-      user: {
-        select: {
-          id: true,
-          name: true,
-          building: {
-            select: {
-              name: true,
-            },
-          },
-        },
-      },
-      bookings: {
-        where: {
-          status: "confirmed",
-        },
-        select: {
-          portions: true,
-        },
-      },
-    },
-  });
-
-  if (!dish) notFound();
-
-  const bookedPortions = dish.bookings.reduce((sum, booking) => sum + booking.portions, 0);
+  const isAuthor = session?.id === dish.user.id;
+  const bookedPortions = dish.bookings.reduce((sum: number, booking: any) => sum + booking.portions, 0);
   const availablePortions = dish.portions - bookedPortions;
 
-  return {
-    ...dish,
-    availablePortions,
+  const handleContactSeller = async () => {
+    try {
+      const response = await fetch("/api/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          dishId: dish.id,
+          otherUserId: dish.user.id,
+        }),
+      });
+      
+      if (response.ok) {
+        const conversation = await response.json();
+        router.push(`/messages?conversation=${conversation.id}`);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la création de la conversation:", error);
+    }
   };
-}
-
-export default async function DishPage({ params }: { params: { id: string } }) {
-  const session = await getSession();
-  const dish = await getDish(params.id);
-  const isAuthor = session?.id === dish.user.id;
-
-  console.log("Dish data:", {
-    availableFrom: dish.availableFrom,
-    availableTo: dish.availableTo
-  });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white py-12">
@@ -127,7 +114,7 @@ export default async function DishPage({ params }: { params: { id: string } }) {
                         {formatPrice(dish.price)}
                       </span>
                       <span className="text-sm text-gray-500">
-                        {dish.availablePortions} portions disponibles
+                        {availablePortions} portions disponibles
                       </span>
                     </div>
                   </div>
@@ -170,7 +157,7 @@ export default async function DishPage({ params }: { params: { id: string } }) {
                     <>
                       <h2 className="font-medium mb-2">Ingrédients</h2>
                       <ul className="list-disc list-inside text-gray-600">
-                        {dish.ingredients.map((ingredient, index) => (
+                        {dish.ingredients.map((ingredient: string, index: number) => (
                           <li key={index}>{ingredient}</li>
                         ))}
                       </ul>
@@ -186,20 +173,44 @@ export default async function DishPage({ params }: { params: { id: string } }) {
                       Vous êtes l'auteur de ce plat
                     </p>
                   </div>
-                ) : dish.available && dish.availablePortions > 0 ? (
+                ) : dish.available && availablePortions > 0 ? (
                   <div className="border-t pt-8">
-                    <h2 className="text-xl font-semibold mb-6">Réserver ce plat</h2>
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-xl font-semibold">Réserver ce plat</h2>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleContactSeller}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Contacter le vendeur
+                      </Button>
+                    </div>
                     <BookingForm
                       dish={{
                         id: dish.id,
                         title: dish.title,
                         price: dish.price,
                         portions: dish.portions,
-                        availablePortions: dish.availablePortions,
+                        availablePortions,
                         availableFrom: dish.availableFrom,
                         availableTo: dish.availableTo,
                       }}
-                      onSubmit={createBooking}
+                      onSubmit={async (data) => {
+                        const response = await fetch("/api/bookings", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify(data),
+                        });
+
+                        if (!response.ok) {
+                          throw new Error("Erreur lors de la réservation");
+                        }
+
+                        router.push("/bookings");
+                      }}
                     />
                   </div>
                 ) : (
