@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Menu, X, ChevronDown, Settings, LogOut, User } from 'lucide-react';
+import { Menu, X, ChevronDown, Settings, LogOut, User, Shield } from 'lucide-react';
 import { NotificationMenu } from './notifications/notification-menu';
 import { usePathname } from 'next/navigation';
 
@@ -145,7 +145,7 @@ export function Header({ session }: { session: any }) {
                     href="/admin/dashboard"
                     className="text-gray-900 hover:text-primary-600 px-3 py-2 text-sm font-medium"
                   >
-                    Dashboard Admin
+                    <Shield className="h-5 w-5" />
                   </Link>
                 )
               ) : session ? (
@@ -200,7 +200,7 @@ export function Header({ session }: { session: any }) {
                     href="/admin/dashboard"
                     className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900"
                   >
-                    Dashboard Admin
+                    <Shield className="h-5 w-5" />
                   </Link>
                 </div>
               )

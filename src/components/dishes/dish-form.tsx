@@ -12,6 +12,8 @@ export function DishForm() {
   const [ingredients, setIngredients] = useState<string[]>([""]);
   const [images, setImages] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [availableFrom, setAvailableFrom] = useState("");
+  const [availableTo, setAvailableTo] = useState("");
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -41,13 +43,41 @@ export function DishForm() {
     setIsLoading(true);
     setError("");
 
-    try {
-      let uploadedImages: string[] = [];
+    // Validation des dates
+    if (availableFrom && availableTo && new Date(availableFrom) >= new Date(availableTo)) {
+      setError("La date de fin doit être postérieure à la date de début");
+      setIsLoading(false);
+      return;
+    }
 
-      // Tenter l'upload des images, mais continuer même en cas d'échec
+    try {
+      const formElement = e.target as HTMLFormElement;
+      const titleInput = formElement.querySelector<HTMLInputElement>('#title');
+      const descriptionInput = formElement.querySelector<HTMLTextAreaElement>('#description');
+      const priceInput = formElement.querySelector<HTMLInputElement>('#price');
+      const portionsInput = formElement.querySelector<HTMLInputElement>('#portions');
+
+      if (!titleInput || !descriptionInput || !priceInput || !portionsInput) {
+        throw new Error("Formulaire incomplet");
+      }
+
+      // Créer d'abord les données de base du plat
+      const baseData = {
+        title: titleInput.value,
+        description: descriptionInput.value,
+        price: parseFloat(priceInput.value),
+        portions: parseInt(portionsInput.value),
+        ingredients: ingredients.filter(Boolean),
+        available: true,
+        images: [],
+        availableFrom: availableFrom ? new Date(availableFrom).toISOString() : null,
+        availableTo: availableTo ? new Date(availableTo).toISOString() : null,
+      };
+
+      // Si des images ont été sélectionnées, essayer de les uploader
       if (imageFiles.length > 0) {
         try {
-          uploadedImages = await Promise.all(
+          const uploadedImages = await Promise.all(
             imageFiles.map(async (file) => {
               const formData = new FormData();
               formData.append("file", file);
@@ -65,36 +95,18 @@ export function DishForm() {
               return data.url;
             })
           );
+          baseData.images = uploadedImages;
         } catch (uploadError) {
           console.error("Erreur lors de l'upload des images:", uploadError);
           // Continuer sans les images
         }
       }
 
-      const formElement = e.target as HTMLFormElement;
-      const titleInput = formElement.querySelector<HTMLInputElement>('#title');
-      const descriptionInput = formElement.querySelector<HTMLTextAreaElement>('#description');
-      const priceInput = formElement.querySelector<HTMLInputElement>('#price');
-      const portionsInput = formElement.querySelector<HTMLInputElement>('#portions');
-
-      if (!titleInput || !descriptionInput || !priceInput || !portionsInput) {
-        throw new Error("Formulaire incomplet");
-      }
-
-      const data = {
-        title: titleInput.value,
-        description: descriptionInput.value,
-        price: parseFloat(priceInput.value),
-        portions: parseInt(portionsInput.value),
-        ingredients: ingredients.filter(Boolean),
-        available: true,
-        images: uploadedImages,
-      };
-
+      // Créer le plat avec ou sans images
       const response = await fetch("/api/dishes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(baseData),
       });
 
       if (!response.ok) {
@@ -112,20 +124,6 @@ export function DishForm() {
     }
   };
 
-  const addIngredient = () => {
-    setIngredients([...ingredients, ""]);
-  };
-
-  const removeIngredient = (index: number) => {
-    setIngredients(ingredients.filter((_, i) => i !== index));
-  };
-
-  const updateIngredient = (index: number, value: string) => {
-    const newIngredients = [...ingredients];
-    newIngredients[index] = value;
-    setIngredients(newIngredients);
-  };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
@@ -136,7 +134,7 @@ export function DishForm() {
 
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-          Nom du plat
+          Nom du plat *
         </label>
         <input
           type="text"
@@ -149,7 +147,7 @@ export function DishForm() {
 
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-          Description
+          Description *
         </label>
         <textarea
           id="description"
@@ -163,7 +161,7 @@ export function DishForm() {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-            Prix par portion (€)
+            Prix par portion (€) *
           </label>
           <input
             type="number"
@@ -178,7 +176,7 @@ export function DishForm() {
 
         <div>
           <label htmlFor="portions" className="block text-sm font-medium text-gray-700 mb-1">
-            Nombre de portions
+            Nombre de portions *
           </label>
           <input
             type="number"
@@ -193,7 +191,7 @@ export function DishForm() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Ingrédients
+          Ingrédients *
         </label>
         <div className="space-y-2">
           {ingredients.map((ingredient, index) => (
@@ -201,7 +199,11 @@ export function DishForm() {
               <input
                 type="text"
                 value={ingredient}
-                onChange={(e) => updateIngredient(index, e.target.value)}
+                onChange={(e) => {
+                  const newIngredients = [...ingredients];
+                  newIngredients[index] = e.target.value;
+                  setIngredients(newIngredients);
+                }}
                 placeholder="Ex: Tomates, Oignons, etc."
                 className="flex-1 rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
               />
@@ -210,7 +212,7 @@ export function DishForm() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => removeIngredient(index)}
+                  onClick={() => setIngredients(ingredients.filter((_, i) => i !== index))}
                 >
                   Retirer
                 </Button>
@@ -221,7 +223,7 @@ export function DishForm() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={addIngredient}
+            onClick={() => setIngredients([...ingredients, ""])}
           >
             Ajouter un ingrédient
           </Button>
@@ -230,7 +232,8 @@ export function DishForm() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Photos du plat (maximum 3)
+          Photos du plat (optionnel)
+          <span className="text-gray-500 text-xs ml-1">Maximum 3 photos</span>
         </label>
         <div className="mt-2 grid grid-cols-3 gap-4">
           {images.map((image, index) => (
@@ -273,9 +276,38 @@ export function DishForm() {
             </div>
           )}
         </div>
-        {error && (
-          <p className="mt-2 text-sm text-red-600">{error}</p>
-        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="availableFrom" className="block text-sm font-medium text-gray-700 mb-1">
+            Disponible à partir de *
+          </label>
+          <input
+            type="datetime-local"
+            id="availableFrom"
+            value={availableFrom}
+            onChange={(e) => setAvailableFrom(e.target.value)}
+            min={new Date().toISOString().slice(0, 16)}
+            required
+            className="w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="availableTo" className="block text-sm font-medium text-gray-700 mb-1">
+            Disponible jusqu'à
+            <span className="text-gray-500 text-xs ml-1">(optionnel)</span>
+          </label>
+          <input
+            type="datetime-local"
+            id="availableTo"
+            value={availableTo}
+            onChange={(e) => setAvailableTo(e.target.value)}
+            min={availableFrom || new Date().toISOString().slice(0, 16)}
+            className="w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
+          />
+        </div>
       </div>
 
       <div className="pt-4">

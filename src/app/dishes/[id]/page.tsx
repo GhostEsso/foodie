@@ -110,6 +110,28 @@ export default async function DishPage({ params }: { params: { id: string } }) {
                   <p className="text-gray-500">
                     Proposé par {dish.user.name} • {dish.user.building.name}
                   </p>
+                  {(dish.availableFrom || dish.availableTo) && (
+                    <div className="mt-2 text-sm text-gray-500">
+                      {dish.availableFrom && (
+                        <p>
+                          Disponible à partir du{" "}
+                          {new Date(dish.availableFrom).toLocaleDateString("fr-FR", {
+                            dateStyle: "long",
+                            timeStyle: "short",
+                          })}
+                        </p>
+                      )}
+                      {dish.availableTo && (
+                        <p>
+                          Disponible jusqu'au{" "}
+                          {new Date(dish.availableTo).toLocaleDateString("fr-FR", {
+                            dateStyle: "long",
+                            timeStyle: "short",
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-primary-600">
@@ -152,6 +174,8 @@ export default async function DishPage({ params }: { params: { id: string } }) {
                         price: dish.price,
                         portions: dish.portions,
                         availablePortions: dish.availablePortions,
+                        availableFrom: dish.availableFrom,
+                        availableTo: dish.availableTo,
                       }}
                       onSubmit={createBooking}
                     />
