@@ -42,7 +42,17 @@ async function createBooking(data: { dishId: string; portions: number; pickupTim
 async function getDish(id: string) {
   const dish = await prisma.dish.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      price: true,
+      portions: true,
+      available: true,
+      images: true,
+      ingredients: true,
+      availableFrom: true,
+      availableTo: true,
       user: {
         select: {
           id: true,
@@ -81,6 +91,11 @@ export default async function DishPage({ params }: { params: { id: string } }) {
   const dish = await getDish(params.id);
   const isAuthor = session?.id === dish.user.id;
 
+  console.log("Dish data:", {
+    availableFrom: dish.availableFrom,
+    availableTo: dish.availableTo
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white py-12">
       <div className="container mx-auto px-4">
@@ -102,59 +117,66 @@ export default async function DishPage({ params }: { params: { id: string } }) {
             </div>
 
             <div className="p-8">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    {dish.title}
-                  </h1>
-                  <p className="text-gray-500">
-                    Proposé par {dish.user.name} • {dish.user.building.name}
-                  </p>
-                  {(dish.availableFrom || dish.availableTo) && (
-                    <div className="mt-2 text-sm text-gray-500">
-                      {dish.availableFrom && (
-                        <p>
-                          Disponible à partir du{" "}
-                          {new Date(dish.availableFrom).toLocaleDateString("fr-FR", {
-                            dateStyle: "long",
-                            timeStyle: "short",
-                          })}
-                        </p>
-                      )}
-                      {dish.availableTo && (
-                        <p>
-                          Disponible jusqu'au{" "}
-                          {new Date(dish.availableTo).toLocaleDateString("fr-FR", {
-                            dateStyle: "long",
-                            timeStyle: "short",
-                          })}
-                        </p>
+              <div className="grid gap-8 md:grid-cols-2">
+                {/* Colonne de gauche */}
+                <div className="space-y-6">
+                  <div>
+                    <h1 className="text-3xl font-bold">{dish.title}</h1>
+                    <div className="mt-2 flex items-center gap-4">
+                      <span className="text-2xl font-bold text-primary-600">
+                        {formatPrice(dish.price)}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {dish.availablePortions} portions disponibles
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Informations de disponibilité */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-medium mb-2">Disponibilité</h3>
+                    <div className="space-y-1 text-sm text-gray-600">
+                      {dish.availableFrom && dish.availableTo ? (
+                        <>
+                          <p>Disponible à partir du : {new Date(dish.availableFrom).toLocaleString('fr-FR', {
+                            dateStyle: 'full',
+                            timeStyle: 'short'
+                          })}</p>
+                          <p>Jusqu'au : {new Date(dish.availableTo).toLocaleString('fr-FR', {
+                            dateStyle: 'full',
+                            timeStyle: 'short'
+                          })}</p>
+                        </>
+                      ) : (
+                        <p>Disponible immédiatement</p>
                       )}
                     </div>
+                  </div>
+
+                  <div>
+                    <h2 className="font-medium mb-2">Description</h2>
+                    <p className="text-gray-600">{dish.description}</p>
+                  </div>
+                </div>
+
+                {/* Colonne de droite */}
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="font-medium mb-2">Proposé par</h2>
+                    <p className="text-gray-600">{dish.user.name} • {dish.user.building.name}</p>
+                  </div>
+
+                  {dish.ingredients.length > 0 && (
+                    <>
+                      <h2 className="font-medium mb-2">Ingrédients</h2>
+                      <ul className="list-disc list-inside text-gray-600">
+                        {dish.ingredients.map((ingredient, index) => (
+                          <li key={index}>{ingredient}</li>
+                        ))}
+                      </ul>
+                    </>
                   )}
                 </div>
-                <div className="text-right">
-                  <div className="text-3xl font-bold text-primary-600">
-                    {formatPrice(dish.price)}
-                  </div>
-                  <p className="text-sm text-gray-500">par portion</p>
-                </div>
-              </div>
-
-              <div className="prose prose-lg mb-8">
-                <h2 className="text-xl font-semibold mb-2">Description</h2>
-                <p className="text-gray-600">{dish.description}</p>
-
-                {dish.ingredients.length > 0 && (
-                  <>
-                    <h2 className="text-xl font-semibold mb-2 mt-6">Ingrédients</h2>
-                    <ul className="list-disc list-inside text-gray-600">
-                      {dish.ingredients.map((ingredient, index) => (
-                        <li key={index}>{ingredient}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
               </div>
 
               {session ? (

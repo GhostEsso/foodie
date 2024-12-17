@@ -69,10 +69,15 @@ export function DishForm() {
         portions: parseInt(portionsInput.value),
         ingredients: ingredients.filter(Boolean),
         available: true,
-        images: [],
+        images: [] as string[],
         availableFrom: availableFrom ? new Date(availableFrom).toISOString() : null,
         availableTo: availableTo ? new Date(availableTo).toISOString() : null,
       };
+
+      console.log("Données envoyées:", {
+        availableFrom: baseData.availableFrom,
+        availableTo: baseData.availableTo
+      });
 
       // Si des images ont été sélectionnées, essayer de les uploader
       if (imageFiles.length > 0) {
