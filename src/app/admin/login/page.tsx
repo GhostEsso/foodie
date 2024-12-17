@@ -1,31 +1,53 @@
 "use client";
 
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Button from "../../../components/ui/button";
-
-const ADMIN_CREDENTIALS = {
-  email: "admin@foody.com",
-  password: "admin123"
-};
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Vérifier si l'admin est déjà connecté
+    const isAdminLoggedIn = localStorage.getItem("isAdminLoggedIn");
+    if (isAdminLoggedIn === "true") {
+      router.push("/admin/dashboard");
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    setError("");
+    setIsLoading(true);
 
-    if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
-      // Stocker l'état de connexion dans un cookie
-      document.cookie = "isAdminLoggedIn=true; path=/";
+    try {
+      const formData = new FormData(e.currentTarget);
+      const data = {
+        email: formData.get("email") as string,
+        password: formData.get("password") as string,
+      };
+
+      const response = await fetch("/api/auth/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Erreur lors de la connexion");
+      }
+
+      localStorage.setItem("isAdminLoggedIn", "true");
       router.push("/admin/dashboard");
-    } else {
-      setError("Identifiants incorrects");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Erreur lors de la connexion");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,7 +98,7 @@ export default function AdminLoginPage() {
             </div>
           )}
 
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full" isLoading={isLoading}>
             Se connecter
           </Button>
         </form>
