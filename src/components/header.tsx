@@ -83,6 +83,22 @@ function UserMenu({ session }: { session: any }) {
                 <User className="h-4 w-4" />
                 Réservations reçues
               </Link>
+              <Link
+                href="/dishes/my-reservations"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsOpen(false)}
+              >
+                <User className="h-4 w-4" />
+                Réservations en attente
+              </Link>
+              <Link
+                href="/messages"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsOpen(false)}
+              >
+                <MessageSquare className="h-4 w-4" />
+                Messages
+              </Link>
               <form action="/api/auth/logout" method="POST" onSubmit={async (e) => {
                 e.preventDefault();
                 try {
@@ -225,6 +241,13 @@ export function Header({ session }: { session: any }) {
                 >
                   <User className="h-4 w-4" />
                   Réservations reçues
+                </Link>
+                <Link
+                  href="/dishes/my-reservations"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900"
+                >
+                  <User className="h-4 w-4" />
+                  Réservations en attente
                 </Link>
                 <Link
                   href="/messages"

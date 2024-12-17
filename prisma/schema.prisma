@@ -74,7 +74,7 @@ model Booking {
   userId     String
   pickupTime DateTime
   portions   Int      @default(1)
-  status     String   @default("pending")
+  status     BookingStatus @default(PENDING)
   total      Float
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -154,4 +154,11 @@ model Conversation {
 enum UserRole {
   USER
   ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
 }

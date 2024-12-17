@@ -78,7 +78,7 @@ export async function POST(request: Request) {
         portions,
         pickupTime: new Date(pickupTime),
         total: dish.price * portions,
-        status: 'pending'
+        status: "PENDING"
       },
       include: {
         user: true,
@@ -95,15 +95,6 @@ export async function POST(request: Request) {
         isRead: false,
       },
     });
-
-    // Commenté temporairement
-    // const io = global.io as Server;
-    // if (io) {
-    //   console.log("Émission de la notification pour l'utilisateur:", dish.userId);
-    //   io.to(dish.userId).emit('notification', notification);
-    // } else {
-    //   console.warn("Socket.IO n'est pas initialisé");
-    // }
 
     return NextResponse.json(booking);
   } catch (error) {

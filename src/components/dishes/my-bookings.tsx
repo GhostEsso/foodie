@@ -99,13 +99,13 @@ export function MyBookings() {
                         {booking.portions} portion{booking.portions > 1 ? "s" : ""}
                       </p>
                       <span className="inline-block px-2 py-1 text-xs rounded-full bg-primary-100 text-primary-800">
-                        {booking.status === "pending"
+                        {booking.status === "PENDING"
                           ? "En attente"
-                          : booking.status === "confirmed"
-                          ? "Confirmé"
-                          : booking.status === "completed"
-                          ? "Terminé"
-                          : "Annulé"}
+                          : booking.status === "APPROVED"
+                          ? "Approuvée"
+                          : booking.status === "REJECTED"
+                          ? "Rejetée"
+                          : "Annulée"}
                       </span>
                     </div>
                   </div>
