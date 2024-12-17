@@ -11,6 +11,8 @@ interface BookingFormProps {
     price: number;
     portions: number;
     availablePortions: number;
+    availableFrom: string | null;
+    availableTo: string | null;
   };
   onSubmit: (data: {
     dishId: string;
@@ -21,37 +23,27 @@ interface BookingFormProps {
 
 export function BookingForm({ dish, onSubmit }: BookingFormProps) {
   const [portions, setPortions] = useState(1);
-  const [pickupTime, setPickupTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  // Générer les créneaux horaires disponibles (de 11h à 21h)
-  const timeSlots = Array.from({ length: 21 }, (_, i) => {
-    const hour = Math.floor(i / 2) + 11;
-    const minutes = i % 2 === 0 ? "00" : "30";
-    return `${hour}:${minutes}`;
-  });
-
-  // Obtenir la date de demain
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const minDate = tomorrow.toISOString().split("T")[0];
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pickupTime) return;
-
     setIsLoading(true);
+    setError(null);
+
     try {
-      const [date, time] = pickupTime.split(" ");
-      const pickupDateTime = new Date(`${date}T${time}:00`);
-      
+      if (!dish.availableFrom) {
+        throw new Error("La date de disponibilité n'est pas définie");
+      }
+
       await onSubmit({
         dishId: dish.id,
         portions,
-        pickupTime: pickupDateTime.toISOString(),
+        pickupTime: dish.availableFrom,
       });
     } catch (error) {
       console.error("Erreur lors de la réservation:", error);
+      setError(error instanceof Error ? error.message : "Une erreur est survenue");
     } finally {
       setIsLoading(false);
     }
@@ -59,6 +51,12 @@ export function BookingForm({ dish, onSubmit }: BookingFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm mb-4">
+          {error}
+        </div>
+      )}
+      
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Nombre de portions
@@ -89,35 +87,6 @@ export function BookingForm({ dish, onSubmit }: BookingFormProps) {
         </p>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Date et heure de retrait
-        </label>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <input
-            type="date"
-            min={minDate}
-            className="rounded-xl border-gray-300 focus:border-primary-500 focus:ring-primary-500"
-            value={pickupTime.split(" ")[0] || ""}
-            onChange={(e) => setPickupTime(`${e.target.value} ${pickupTime.split(" ")[1] || ""}`)}
-            required
-          />
-          <select
-            className="rounded-xl border-gray-300 focus:border-primary-500 focus:ring-primary-500"
-            value={pickupTime.split(" ")[1] || ""}
-            onChange={(e) => setPickupTime(`${pickupTime.split(" ")[0] || minDate} ${e.target.value}`)}
-            required
-          >
-            <option value="">Choisir une heure</option>
-            {timeSlots.map((time) => (
-              <option key={time} value={time}>
-                {time}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
       <div className="border-t pt-4">
         <div className="flex justify-between items-center mb-4">
           <span className="text-gray-600">Total</span>
@@ -129,7 +98,7 @@ export function BookingForm({ dish, onSubmit }: BookingFormProps) {
           type="submit"
           className="w-full"
           isLoading={isLoading}
-          disabled={!pickupTime || isLoading}
+          disabled={isLoading}
         >
           Confirmer la réservation
         </Button>

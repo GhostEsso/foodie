@@ -27,6 +27,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Protéger les routes API admin
+  if (request.nextUrl.pathname.startsWith('/api/admin')) {
+    const isAdminLoggedIn = request.cookies.get('isAdminLoggedIn')?.value === 'true';
+    
+    if (!isAdminLoggedIn) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+  }
+
   return NextResponse.next();
 }
 

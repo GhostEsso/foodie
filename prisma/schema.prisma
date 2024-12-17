@@ -16,6 +16,7 @@ model User {
   googleId   String?   @unique
   role       UserRole  @default(USER)
   buildingId String
+  isBlocked  Boolean   @default(false)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   dishes     Dish[]
@@ -51,6 +52,8 @@ model Dish {
   available   Boolean   @default(true)
   portions    Int       @default(1)
   likesCount  Int       @default(0)
+  availableFrom DateTime?
+  availableTo   DateTime?
   userId      String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
