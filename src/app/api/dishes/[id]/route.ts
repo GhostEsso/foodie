@@ -27,7 +27,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
         },
         bookings: {
           where: {
-            status: "confirmed",
+            status: "APPROVED",
           },
           select: {
             pickupTime: true,
@@ -43,6 +43,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
     return NextResponse.json(dish);
   } catch (error) {
+    console.error("Erreur lors de la récupération du plat:", error);
     return NextResponse.json({ error: "Erreur lors de la récupération du plat" }, { status: 500 });
   }
 }
