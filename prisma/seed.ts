@@ -3,6 +3,21 @@ import { hash } from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+// Fonction utilitaire pour générer des dates de disponibilité
+function generateAvailabilityDates() {
+  const now = new Date();
+  const availableFrom = new Date(now);
+  availableFrom.setHours(availableFrom.getHours() + Math.floor(Math.random() * 24)); // Disponible dans 0-24h
+
+  const availableTo = new Date(availableFrom);
+  availableTo.setHours(availableTo.getHours() + Math.floor(Math.random() * 48) + 1); // Disponible pendant 1-48h
+
+  return {
+    availableFrom,
+    availableTo
+  };
+}
+
 async function main() {
   // Création des bâtiments
   const buildings = await Promise.all([
@@ -66,7 +81,9 @@ async function main() {
         description: "Plat traditionnel français mijoté au vin rouge",
         price: 15.50,
         available: true,
+        portions: 4,
         userId: users[0].id,
+        ...generateAvailabilityDates(),
       },
     }),
     prisma.dish.create({
@@ -75,7 +92,9 @@ async function main() {
         description: "Pommes de terre gratinées à la crème",
         price: 12.00,
         available: true,
+        portions: 6,
         userId: users[0].id,
+        ...generateAvailabilityDates(),
       },
     }),
 
@@ -86,7 +105,9 @@ async function main() {
         description: "Nouilles sautées aux légumes et crevettes",
         price: 13.50,
         available: true,
+        portions: 3,
         userId: users[1].id,
+        ...generateAvailabilityDates(),
       },
     }),
     prisma.dish.create({
@@ -95,7 +116,9 @@ async function main() {
         description: "Curry thaï au lait de coco",
         price: 14.00,
         available: true,
+        portions: 4,
         userId: users[1].id,
+        ...generateAvailabilityDates(),
       },
     }),
 
@@ -106,7 +129,9 @@ async function main() {
         description: "Lasagnes maison à la bolognaise",
         price: 16.00,
         available: true,
+        portions: 8,
         userId: users[2].id,
+        ...generateAvailabilityDates(),
       },
     }),
     prisma.dish.create({
@@ -115,7 +140,9 @@ async function main() {
         description: "Risotto crémeux aux champignons",
         price: 14.50,
         available: true,
+        portions: 4,
         userId: users[2].id,
+        ...generateAvailabilityDates(),
       },
     }),
   ]);

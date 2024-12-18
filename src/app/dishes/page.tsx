@@ -86,7 +86,18 @@ async function getDishes(searchParams: SearchParams) {
 
   const dishes = await prisma.dish.findMany({
     where,
-    include: {
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      price: true,
+      images: true,
+      available: true,
+      portions: true,
+      likesCount: true,
+      availableFrom: true,
+      availableTo: true,
+      createdAt: true,
       user: {
         select: {
           id: true,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Button from "../ui/button";
@@ -18,6 +18,8 @@ interface DishCardProps {
     available: boolean;
     portions: number;
     likesCount: number;
+    availableFrom: string | null;
+    availableTo: string | null;
     user: {
       id: string;
       name: string;
@@ -131,8 +133,40 @@ export function DishCard({
           <h3 className="text-lg font-semibold mb-1 text-gray-900">
             {dish.title}
           </h3>
-          <p className="text-sm text-gray-500 line-clamp-2">{dish.description}</p>
+          <p className="text-sm text-gray-500 line-clamp-2">
+            {className?.includes("!flex") 
+              ? dish.description 
+              : dish.description.length > 50
+                ? `${dish.description.substring(0, 50)}...` 
+                : dish.description}
+          </p>
         </div>
+
+        {/* Disponibilité */}
+        {dish.availableFrom && (
+          <div className="mb-4 text-sm">
+            <p className="text-gray-600">
+              Disponible le{" "}
+              {new Date(dish.availableFrom).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "long",
+                hour: "2-digit",
+                minute: "2-digit"
+              })}
+            </p>
+            {dish.availableTo && (
+              <p className="text-gray-600">
+                jusqu'au{" "}
+                {new Date(dish.availableTo).toLocaleDateString("fr-FR", {
+                  day: "numeric",
+                  month: "long",
+                  hour: "2-digit",
+                  minute: "2-digit"
+                })}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center justify-between mb-4">
           <div>
