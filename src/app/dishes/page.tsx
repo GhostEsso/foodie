@@ -81,8 +81,19 @@ async function getDishes(searchParams: SearchParams) {
   // Calculer le nombre total de plats
   const totalDishes = await prisma.dish.count({ where });
   const totalPages = Math.ceil(totalDishes / ITEMS_PER_PAGE);
-  const currentPage = Math.min(Math.max(1, parseInt(page)), totalPages);
-  const skip = (currentPage - 1) * ITEMS_PER_PAGE;
+  
+  // S'assurer que la page est un nombre valide
+  let currentPage = 1;
+  try {
+    const parsedPage = parseInt(page || "1");
+    if (!isNaN(parsedPage) && parsedPage > 0) {
+      currentPage = Math.min(parsedPage, Math.max(1, totalPages));
+    }
+  } catch (error) {
+    console.error("Erreur lors du parsing de la page:", error);
+  }
+
+  const skip = Math.max(0, (currentPage - 1) * ITEMS_PER_PAGE);
 
   const dishes = await prisma.dish.findMany({
     where,
