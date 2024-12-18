@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { getSession } from "../../../lib/auth";
+import { formatName } from "../../../lib/utils";
 // import { Server } from 'socket.io';
 
 export async function GET() {
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
     const notification = await prisma.notification.create({
       data: {
         type: "BOOKING_CREATED",
-        message: `${session.name} a réservé ${portions} portion${portions > 1 ? 's' : ''} de votre plat "${dish.title}"`,
+        message: `**${formatName(session.name)}** a réservé ${portions} portion${portions > 1 ? 's' : ''} de votre plat "${dish.title}"`,
         userId: dish.userId,
         isRead: false,
       },

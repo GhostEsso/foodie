@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../../lib/prisma";
 import { getSession } from "../../../../../lib/auth";
+import { formatName } from "../../../../../lib/utils";
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -40,7 +41,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     await prisma.notification.create({
       data: {
         type: "BOOKING_APPROVED",
-        message: `Votre réservation pour "${booking.dish.title}" a été approuvée par ${session.name}`,
+        message: `Votre réservation pour "${booking.dish.title}" a été approuvée par **${formatName(session.name)}**`,
         userId: booking.userId,
       },
     });

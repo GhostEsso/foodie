@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Menu, X, ChevronDown, Settings, LogOut, User, Shield, MessageSquare } from 'lucide-react';
 import { NotificationMenu } from './notifications/notification-menu';
+import { MessageMenu } from './messages/message-menu';
 import { usePathname } from 'next/navigation';
 
 function NavLinks({ session }: { session: any }) {
@@ -28,12 +29,6 @@ function NavLinks({ session }: { session: any }) {
             className="text-gray-900 hover:text-primary-600 px-3 py-2 text-sm font-medium"
           >
             Mes réservations
-          </Link>
-          <Link
-            href="/messages"
-            className="text-gray-900 hover:text-primary-600 px-3 py-2 text-sm font-medium"
-          >
-            Messages
           </Link>
         </>
       )}
@@ -172,7 +167,10 @@ export function Header({ session }: { session: any }) {
                 )
               ) : session ? (
                 <>
-                  <NotificationMenu />
+                  <div className="flex items-center gap-2">
+                    <MessageMenu />
+                    <NotificationMenu />
+                  </div>
                   <UserMenu session={session} />
                 </>
               ) : (

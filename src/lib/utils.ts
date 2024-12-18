@@ -11,3 +11,7 @@ export function formatPrice(price: number) {
     currency: "EUR",
   }).format(price);
 }
+
+export function formatName(name: string): string {
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
