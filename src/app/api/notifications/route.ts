@@ -10,22 +10,23 @@ export async function GET() {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    console.log("Récupération des notifications pour l'utilisateur:", session.id);
     const notifications = await prisma.notification.findMany({
       where: {
         userId: session.id,
-        isRead: false,
       },
       orderBy: {
         createdAt: "desc",
       },
+      take: 20, // Limiter aux 20 dernières notifications
     });
-    console.log("Notifications trouvées:", notifications.length);
 
-    return NextResponse.json({ notifications });
+    return NextResponse.json(notifications);
   } catch (error) {
     console.error("Erreur lors de la récupération des notifications:", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erreur lors de la récupération des notifications" },
+      { status: 500 }
+    );
   }
 }
 
