@@ -190,7 +190,13 @@ export function Header({ session }: { session: any }) {
                 </>
               )}
             </div>
-            <div className="sm:hidden flex items-center">
+            <div className="sm:hidden flex items-center gap-2">
+              {session && !isAdminPage && (
+                <div className="flex items-center gap-2">
+                  <MessageMenu />
+                  <NotificationMenu />
+                </div>
+              )}
               <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="text-gray-500 hover:text-gray-700 p-2"
@@ -246,13 +252,6 @@ export function Header({ session }: { session: any }) {
                 >
                   <User className="h-4 w-4" />
                   Réservations en attente
-                </Link>
-                <Link
-                  href="/messages"
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  Messages
                 </Link>
                 <form action="/api/auth/logout" method="POST" onSubmit={async (e) => {
                   e.preventDefault();
