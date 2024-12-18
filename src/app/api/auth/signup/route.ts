@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
+import { hash } from "bcryptjs";
 import { prisma } from "../../../../lib/prisma";
-import { hashPassword } from "../../../../lib/auth";
-import { Prisma } from "@prisma/client";
+import { sendVerificationEmail } from "../../../../lib/email";
+
+function generateVerificationCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
 export async function POST(request: Request) {
   try {
     const { email, password, name, buildingId, apartment } = await request.json();
 
-    // Vérification des champs requis
+    // Vérifier que tous les champs requis sont présents
     if (!email || !password || !name || !buildingId || !apartment) {
       return NextResponse.json(
         { error: "Tous les champs sont requis" },
@@ -23,6 +27,18 @@ export async function POST(request: Request) {
     if (existingUser) {
       return NextResponse.json(
         { error: "Cet email est déjà utilisé" },
+        { status: 400 }
+      );
+    }
+
+    // Vérifier si le bâtiment existe
+    const building = await prisma.building.findUnique({
+      where: { id: buildingId },
+    });
+
+    if (!building) {
+      return NextResponse.json(
+        { error: "Bâtiment non trouvé" },
         { status: 400 }
       );
     }
@@ -44,8 +60,12 @@ export async function POST(request: Request) {
       );
     }
 
+    // Générer le code de vérification
+    const verificationCode = generateVerificationCode();
+    const verificationCodeExpires = new Date(Date.now() + 3600000); // Expire dans 1 heure
+
     // Hasher le mot de passe
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await hash(password, 12);
 
     // Créer l'utilisateur
     const user = await prisma.user.create({
@@ -55,49 +75,32 @@ export async function POST(request: Request) {
         name,
         buildingId,
         apartment,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        building: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
+        verificationCode,
+        verificationCodeExpires,
+        emailVerified: false,
       },
     });
 
-    return NextResponse.json(user);
+    // Envoyer l'email de vérification
+    await sendVerificationEmail(email, verificationCode);
+
+    return NextResponse.json({
+      message: "Un code de vérification a été envoyé à votre adresse email",
+      userId: user.id,
+    });
   } catch (error) {
-    console.error("Erreur détaillée lors de l'inscription:", {
-      error,
-      message: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : undefined
-    });
-
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error("Prisma Error Details:", {
-        code: error.code,
-        meta: error.meta,
-        message: error.message
-      });
-      
-      if (error.code === 'P2002') {
-        return NextResponse.json(
-          { error: "Un conflit existe avec les données fournies" },
-          { status: 400 }
-        );
-      }
+    console.error("Erreur détaillée lors de l'inscription:", error);
+    
+    // Retourner un message d'erreur plus spécifique
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: `Erreur lors de l'inscription: ${error.message}` },
+        { status: 500 }
+      );
     }
-
+    
     return NextResponse.json(
-      { 
-        error: "Erreur lors de l'inscription. Veuillez réessayer.",
-        details: error instanceof Error ? error.message : "Erreur inconnue"
-      },
+      { error: "Une erreur inattendue s'est produite lors de l'inscription" },
       { status: 500 }
     );
   }

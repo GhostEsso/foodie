@@ -8,26 +8,29 @@ datasource db {
 }
 
 model User {
-  id         String    @id @default(uuid())
-  email      String    @unique
-  password   String
-  name       String
-  apartment  String
-  googleId   String?   @unique
-  role       UserRole  @default(USER)
-  buildingId String
-  isBlocked  Boolean   @default(false)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  dishes     Dish[]
-  bookings   Booking[]
-  orders     Order[]
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          String    @default("USER")
+  googleId      String?   @unique
+  apartment     String?
+  buildingId    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  isBlocked     Boolean   @default(false)
+  dishes        Dish[]
+  bookings      Booking[]
   notifications Notification[]
-  likes      Like[]
-  building   Building  @relation(fields: [buildingId], references: [id])
-  sentMessages Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
   conversations Conversation[] @relation("UserConversations")
+  sentMessages     Message[]   @relation("SentMessages")
+  receivedMessages Message[]   @relation("ReceivedMessages")
+  emailVerified Boolean   @default(false)
+  verificationCode String? @unique
+  verificationCodeExpires DateTime?
+  building    Building? @relation(fields: [buildingId], references: [id])
+  orders      Order[]
+  likes       Like[]
 
   @@unique([buildingId, apartment])
   @@map("users")
@@ -116,10 +119,10 @@ model Message {
 
 model Notification {
   id        String   @id @default(uuid())
-  type      String   // "BOOKING_CREATED", "BOOKING_CANCELLED", etc.
+  type      String
   message   String
   isRead    Boolean  @default(false)
-  userId    String   // L'utilisateur qui reçoit la notification
+  userId    String
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
