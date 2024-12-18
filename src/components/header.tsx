@@ -147,8 +147,12 @@ export function Header({ session }: { session: any }) {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
-            <Link href="/" className="text-2xl font-bold text-primary-600 flex items-center">
-              Foody
+            <Link 
+              href="/" 
+              className="font-['Segoe_UI'] text-2xl font-black tracking-tighter text-[#1b74e4] flex items-center"
+              style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+            >
+              foody
             </Link>
             <div className="hidden sm:ml-6 sm:flex sm:items-center">
               {!isAdminPage && <NavLinks session={session} />}
