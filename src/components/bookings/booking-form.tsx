@@ -1,26 +1,53 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Button from "../ui/button";
 import { formatPrice } from "../../lib/utils";
-import { useBookingForm } from "../../hooks/useBookingForm";
-import { BookingFormDish, BookingFormData } from "../../models/booking/booking.types";
 
 interface BookingFormProps {
-  dish: BookingFormDish;
-  onSubmit: (data: BookingFormData) => Promise<void>;
+  dish: {
+    id: string;
+    title: string;
+    price: number;
+    portions: number;
+    availablePortions: number;
+    availableFrom: string | null;
+    availableTo: string | null;
+  };
+  onSubmit: (data: {
+    dishId: string;
+    portions: number;
+    pickupTime: string;
+  }) => Promise<void>;
 }
 
 export function BookingForm({ dish, onSubmit }: BookingFormProps) {
-  const {
-    portions,
-    isLoading,
-    error,
-    incrementPortions,
-    decrementPortions,
-    handleSubmit,
-    totalPrice
-  } = useBookingForm({ dish, onSubmit });
+  const [portions, setPortions] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      if (!dish.availableFrom) {
+        throw new Error("La date de disponibilité n'est pas définie");
+      }
+
+      await onSubmit({
+        dishId: dish.id,
+        portions,
+        pickupTime: dish.availableFrom,
+      });
+    } catch (error) {
+      console.error("Erreur lors de la réservation:", error);
+      setError(error instanceof Error ? error.message : "Une erreur est survenue");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -39,7 +66,7 @@ export function BookingForm({ dish, onSubmit }: BookingFormProps) {
             type="button"
             variant="outline"
             size="sm"
-            onClick={decrementPortions}
+            onClick={() => setPortions(Math.max(1, portions - 1))}
             disabled={portions === 1}
           >
             -
@@ -49,7 +76,7 @@ export function BookingForm({ dish, onSubmit }: BookingFormProps) {
             type="button"
             variant="outline"
             size="sm"
-            onClick={incrementPortions}
+            onClick={() => setPortions(Math.min(dish.availablePortions, portions + 1))}
             disabled={portions === dish.availablePortions}
           >
             +
@@ -64,7 +91,7 @@ export function BookingForm({ dish, onSubmit }: BookingFormProps) {
         <div className="flex justify-between items-center mb-4">
           <span className="text-gray-600">Total</span>
           <span className="text-2xl font-bold text-primary-600">
-            {formatPrice(totalPrice)}
+            {formatPrice(dish.price * portions)}
           </span>
         </div>
         <Button

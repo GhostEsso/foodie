@@ -1,30 +1,110 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Send } from "lucide-react";
 import Button from "../ui/button";
-import { useChat } from "../../hooks/useChat";
-import { ChatWindowProps } from "../../models/message/message.types";
 
-export function ChatWindow(props: ChatWindowProps) {
-  const {
-    messages,
-    newMessage,
-    setNewMessage,
-    isLoading,
-    handleSubmit,
-    messagesContainerRef,
-    currentUserId
-  } = useChat(props);
+interface Message {
+  id: string;
+  content: string;
+  senderId: string;
+  createdAt: string;
+  isRead: boolean;
+}
+
+interface ChatWindowProps {
+  conversationId: string;
+  currentUserId: string;
+  otherUser: {
+    id: string;
+    name: string;
+  };
+  dish: {
+    title: string;
+  };
+}
+
+export function ChatWindow({ conversationId, currentUserId, otherUser, dish }: ChatWindowProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 5000);
+    return () => clearInterval(interval);
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (messages.length > 0 && messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      const isScrolledToBottom = container.scrollHeight - container.scrollTop === container.clientHeight;
+      
+      if (isScrolledToBottom) {
+        scrollToBottom();
+      }
+    }
+  }, [messages]);
+
+  const fetchMessages = async () => {
+    try {
+      const response = await fetch(`/api/conversations/${conversationId}/messages`);
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération des messages:", error);
+    }
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: newMessage,
+          receiverId: otherUser.id,
+        }),
+      });
+
+      if (response.ok) {
+        setNewMessage("");
+        await fetchMessages();
+        scrollToBottom();
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'envoi du message:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
       {/* En-tête fixe */}
       <div className="p-4 border-b bg-white">
-        <h3 className="font-medium text-gray-900">{props.otherUser.name}</h3>
-        <p className="text-sm text-gray-500">{props.dish.title}</p>
+        <h3 className="font-medium text-gray-900">{otherUser.name}</h3>
+        <p className="text-sm text-gray-500">{dish.title}</p>
       </div>
 
       {/* Zone de messages scrollable */}
@@ -63,6 +143,7 @@ export function ChatWindow(props: ChatWindowProps) {
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Formulaire d'envoi fixe */}

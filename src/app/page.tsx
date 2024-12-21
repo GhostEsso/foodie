@@ -1,29 +1,35 @@
-"use client";
-
-import React from "react";
+import { getSession } from "../lib/auth";
 import Button from "../components/ui/button";
+import { prisma } from "../lib/prisma";
 import Link from "next/link";
-import { useHome } from "../hooks/useHome";
-import { LoadingPage } from "../components/ui/loading";
 
-export default function Home() {
-  const { recentDishes, isLoading, error } = useHome();
+async function getRecentDishes() {
+  return prisma.dish.findMany({
+    where: {
+      available: true,
+    },
+    include: {
+      user: {
+        select: {
+          name: true,
+          building: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 3,
+  });
+}
 
-  if (isLoading) {
-    return <LoadingPage message="Chargement..." />;
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-red-600">Erreur: {error}</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+export default async function Home() {
+  const session = await getSession();
+  const recentDishes = await getRecentDishes();
 
   return (
     <div className="min-h-screen">
@@ -44,11 +50,13 @@ export default function Home() {
                   Découvrir les plats
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="bg-white/10" asChild>
-                <Link href="/signup">
-                  Créer un compte
-                </Link>
-              </Button>
+              {!session && (
+                <Button size="lg" variant="outline" className="bg-white/10" asChild>
+                  <Link href="/signup">
+                    Créer un compte
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </div>

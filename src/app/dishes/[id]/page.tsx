@@ -3,14 +3,15 @@
 import React from "react";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+// import { getSession } from "../../../lib/auth";
+// import { prisma } from "../../../lib/prisma";
 import { BookingForm } from "../../../components/bookings/booking-form";
 import Button from "../../../components/ui/button";
 import { formatPrice } from "../../../lib/utils";
 import Link from "next/link";
 import { MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useDishDetails } from "../../../hooks/useDishDetails";
-import { LoadingPage } from "../../../components/ui/loading";
+import { Loading } from "../../../components/ui/loading";
 
 interface DishPageProps {
   params: { id: string };
@@ -18,18 +19,43 @@ interface DishPageProps {
 
 export default function DishPage({ params }: DishPageProps) {
   const router = useRouter();
-  const { dish, session, isLoading, error, isAuthor, availablePortions } = useDishDetails(params.id);
+  const [dish, setDish] = React.useState<any>(null);
+  const [session, setSession] = React.useState<any>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [sessionRes, dishRes] = await Promise.all([
+          fetch("/api/auth/session"),
+          fetch(`/api/dishes/${params.id}`)
+        ]);
+
+        const sessionData = await sessionRes.json();
+        const dishData = await dishRes.json();
+
+        if (!dishData || dishData.error) {
+          notFound();
+        }
+
+        setSession(sessionData);
+        setDish(dishData);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des données:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [params.id]);
 
   if (isLoading) {
-    return <LoadingPage message="Chargement du plat..." />;
-  }
-
-  if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white py-12">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <div className="text-red-600">Erreur: {error}</div>
+            <Loading message="Chargement du plat..." />
           </div>
         </div>
       </div>
@@ -39,6 +65,10 @@ export default function DishPage({ params }: DishPageProps) {
   if (!dish) {
     return notFound();
   }
+
+  const isAuthor = session?.id === dish.user.id;
+  const bookedPortions = dish.bookings.reduce((sum: number, booking: any) => sum + booking.portions, 0);
+  const availablePortions = dish.portions - bookedPortions;
 
   const handleContactSeller = async () => {
     try {
