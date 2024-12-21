@@ -8,31 +8,35 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String
-  name          String
-  role          String    @default("USER")
-  googleId      String?   @unique
-  apartment     String?
-  buildingId    String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  isBlocked     Boolean   @default(false)
-  dishes        Dish[]
-  bookings      Booking[]
-  notifications Notification[]
-  conversations Conversation[] @relation("UserConversations")
-  sentMessages     Message[]   @relation("SentMessages")
-  receivedMessages Message[]   @relation("ReceivedMessages")
-  emailVerified Boolean   @default(false)
-  verificationCode String? @unique
+  id                      String         @id @default(cuid())
+  email                   String         @unique
+  password                String
+  name                    String
+  role                    String         @default("USER")
+  image                   String?
+  status                  String         @default("PENDING")
+  googleId                String?        @unique
+  apartment               String?
+  buildingId              String?
+  building                Building?      @relation(fields: [buildingId], references: [id])
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  isBlocked               Boolean        @default(false)
+  emailVerified           Boolean        @default(false)
+  verificationCode        String?
   verificationCodeExpires DateTime?
-  building    Building? @relation(fields: [buildingId], references: [id])
-  orders      Order[]
-  likes       Like[]
 
-  @@unique([buildingId, apartment])
+  // Relations
+  dishes                  Dish[]
+  bookings               Booking[]
+  sentMessages           Message[]       @relation("SentMessages")
+  receivedMessages       Message[]       @relation("ReceivedMessages")
+  notifications          Notification[]
+  orders                 Order[]
+  likes                  Like[]
+  conversations          Conversation[]  @relation("UserConversations")
+
+  @@index([buildingId])
   @@map("users")
 }
 

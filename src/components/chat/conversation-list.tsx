@@ -1,123 +1,79 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { formatDistanceToNow } from "date-fns";
-import { fr } from "date-fns/locale";
-import { MessageSquare } from "lucide-react";
-
-interface Conversation {
-  id: string;
-  dish: {
-    id: string;
-    title: string;
-    images: string[];
-  };
-  lastMessage?: {
-    content: string;
-    createdAt: string;
-    isRead: boolean;
-  };
-  otherUser: {
-    id: string;
-    name: string;
-  };
-}
+import { useMessages } from '../../hooks/useMessages';
+import { Conversation } from '../../models/message/message.types';
+import { LoadingPage } from '../ui/loading';
 
 interface ConversationListProps {
-  onSelectConversation?: (conversation: Conversation) => void;
+  userId: string;
+  selectedConversationId?: string;
+  onSelectConversation: (conversation: Conversation) => void;
 }
 
-export function ConversationList({ onSelectConversation }: ConversationListProps) {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchConversations();
-  }, []);
-
-  const fetchConversations = async () => {
-    try {
-      const response = await fetch("/api/conversations");
-      if (response.ok) {
-        const data = await response.json();
-        setConversations(data);
-      }
-    } catch (error) {
-      console.error("Erreur lors de la récupération des conversations:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleConversationClick = (conversation: Conversation) => {
-    setSelectedConversation(conversation.id);
-    onSelectConversation?.(conversation);
-  };
+export function ConversationList({
+  userId,
+  selectedConversationId,
+  onSelectConversation
+}: ConversationListProps) {
+  const { conversations, isLoading, error } = useMessages();
 
   if (isLoading) {
-    return <div className="p-4 text-center">Chargement...</div>;
+    return <LoadingPage message="Chargement des conversations..." />;
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-red-600">
+        {error}
+      </div>
+    );
   }
 
   if (conversations.length === 0) {
     return (
-      <div className="p-8 text-center">
-        <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-500">Aucune conversation</p>
+      <div className="p-4 text-gray-500 text-center">
+        Aucune conversation
       </div>
     );
   }
 
   return (
     <div className="divide-y">
-      {conversations.map((conversation) => (
-        <div
-          key={conversation.id}
-          className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-            selectedConversation === conversation.id ? "bg-primary-50" : ""
-          }`}
-          onClick={() => handleConversationClick(conversation)}
-        >
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0">
-              {conversation.dish.images[0] ? (
-                <img
-                  src={conversation.dish.images[0]}
-                  alt={conversation.dish.title}
-                  className="w-full h-full object-cover rounded-full"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  <MessageSquare className="h-6 w-6" />
+      {conversations.map((conversation) => {
+        const otherUser = conversation.participants.find(p => p.id !== userId)!;
+        const lastMessage = conversation.messages[0];
+
+        return (
+          <button
+            key={conversation.id}
+            onClick={() => onSelectConversation(conversation)}
+            className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
+              selectedConversationId === conversation.id ? 'bg-primary-50' : ''
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 truncate">
+                  {otherUser.name}
+                </p>
+                <p className="text-sm text-gray-500 truncate">
+                  {conversation.dish.title}
+                </p>
+                {lastMessage && (
+                  <p className="mt-1 text-sm text-gray-600 truncate">
+                    {lastMessage.content}
+                  </p>
+                )}
+              </div>
+              {lastMessage && (
+                <div className="text-xs text-gray-400">
+                  {new Date(lastMessage.createdAt).toLocaleDateString()}
                 </div>
               )}
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-start">
-                <h3 className="font-medium text-gray-900 truncate">
-                  {conversation.otherUser.name}
-                </h3>
-                {conversation.lastMessage && (
-                  <span className="text-xs text-gray-500">
-                    {formatDistanceToNow(new Date(conversation.lastMessage.createdAt), {
-                      addSuffix: true,
-                      locale: fr,
-                    })}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-gray-500 truncate">
-                {conversation.dish.title}
-              </p>
-              {conversation.lastMessage && (
-                <p className="text-sm text-gray-600 truncate">
-                  {conversation.lastMessage.content}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      ))}
+          </button>
+        );
+      })}
     </div>
   );
 } 
