@@ -1,35 +1,65 @@
-import { getSession } from "../lib/auth";
-import Button from "../components/ui/button";
-import { prisma } from "../lib/prisma";
-import Link from "next/link";
+"use client";
 
-async function getRecentDishes() {
-  return prisma.dish.findMany({
-    where: {
-      available: true,
-    },
-    include: {
-      user: {
-        select: {
-          name: true,
-          building: {
-            select: {
-              name: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 3,
-  });
+import { useEffect, useState } from "react";
+import Button from "../components/ui/button";
+import Link from "next/link";
+import { Loading } from "../components/ui/loading";
+
+interface Dish {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  images: string[];
+  user: {
+    name: string;
+    building?: {
+      name: string;
+    };
+  };
 }
 
-export default async function Home() {
-  const session = await getSession();
-  const recentDishes = await getRecentDishes();
+export default function Home() {
+  const [session, setSession] = useState<any>(null);
+  const [recentDishes, setRecentDishes] = useState<Dish[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [sessionRes, dishesRes] = await Promise.all([
+          fetch("/api/auth/session"),
+          fetch("/api/dishes/recent")
+        ]);
+
+        const [sessionData, dishesData] = await Promise.all([
+          sessionRes.json(),
+          dishesRes.json()
+        ]);
+
+        setSession(sessionData);
+        setRecentDishes(dishesData);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des données:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <Loading message="Chargement..." />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
