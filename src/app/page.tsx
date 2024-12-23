@@ -1,53 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React from "react";
 import Button from "../components/ui/button";
 import Link from "next/link";
 import { Loading } from "../components/ui/loading";
-
-interface Dish {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  images: string[];
-  user: {
-    name: string;
-    building?: {
-      name: string;
-    };
-  };
-}
+import { useHome } from "../hooks/useHome";
 
 export default function Home() {
-  const [session, setSession] = useState<any>(null);
-  const [recentDishes, setRecentDishes] = useState<Dish[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [sessionRes, dishesRes] = await Promise.all([
-          fetch("/api/auth/session"),
-          fetch("/api/dishes/recent")
-        ]);
-
-        const [sessionData, dishesData] = await Promise.all([
-          sessionRes.json(),
-          dishesRes.json()
-        ]);
-
-        setSession(sessionData);
-        setRecentDishes(dishesData);
-      } catch (error) {
-        console.error("Erreur lors de la récupération des données:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+  const { session, recentDishes, isLoading } = useHome();
 
   if (isLoading) {
     return (

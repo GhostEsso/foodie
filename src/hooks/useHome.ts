@@ -1,30 +1,46 @@
 import { useState, useEffect } from 'react';
+import { DishWithUser } from '../models/dish/dish.types';
 
-export function useHome() {
-  const [recentDishes, setRecentDishes] = useState([]);
+interface UseHomeReturn {
+  session: any;
+  recentDishes: DishWithUser[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+export function useHome(): UseHomeReturn {
+  const [session, setSession] = useState<any>(null);
+  const [recentDishes, setRecentDishes] = useState<DishWithUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchRecentDishes();
+    const fetchData = async () => {
+      try {
+        const [sessionRes, dishesRes] = await Promise.all([
+          fetch("/api/auth/session"),
+          fetch("/api/dishes/recent")
+        ]);
+
+        const [sessionData, dishesData] = await Promise.all([
+          sessionRes.json(),
+          dishesRes.json()
+        ]);
+
+        setSession(sessionData);
+        setRecentDishes(dishesData);
+      } catch (error) {
+        setError(error instanceof Error ? error.message : "Une erreur est survenue");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  const fetchRecentDishes = async () => {
-    try {
-      const response = await fetch('/api/dishes/recent');
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des plats récents');
-      }
-      const data = await response.json();
-      setRecentDishes(data);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Une erreur est survenue');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return {
+    session,
     recentDishes,
     isLoading,
     error
