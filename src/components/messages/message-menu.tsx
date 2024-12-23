@@ -1,79 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { MessageMenuProps } from "../../models/message/message-menu.types";
+import { useMessageMenu } from "../../hooks/useMessageMenu";
+import { cn } from "../../lib/utils";
 
-interface Message {
-  id: string;
-  content: string;
-  senderId: string;
-  isRead: boolean;
-  createdAt: string;
-  conversation: {
-    id: string;
-    otherUser: {
-      name: string;
-    };
-    dish: {
-      title: string;
-    };
-  };
-}
-
-export function MessageMenu() {
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-
-  useEffect(() => {
-    fetchUnreadCount();
-    fetchRecentMessages();
-    const interval = setInterval(() => {
-      fetchUnreadCount();
-      fetchRecentMessages();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await fetch("/api/messages/unread-count");
-      if (response.ok) {
-        const data = await response.json();
-        setUnreadCount(data.count);
-      }
-    } catch (error) {
-      console.error("Erreur lors de la récupération des messages non lus:", error);
-    }
-  };
-
-  const fetchRecentMessages = async () => {
-    try {
-      const response = await fetch("/api/messages/recent");
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data);
-      }
-    } catch (error) {
-      console.error("Erreur lors de la récupération des messages récents:", error);
-    }
-  };
+export function MessageMenu({ className }: MessageMenuProps) {
+  const {
+    unreadCount,
+    isOpen,
+    messages,
+    isLoading,
+    toggleMenu,
+    closeMenu
+  } = useMessageMenu();
 
   return (
-    <div className="relative">
-      <Link
-        href="/messages"
+    <div className={cn("relative", className)}>
+      <button
+        type="button"
         className="relative p-2 text-gray-700 hover:text-gray-900 transition-colors duration-200"
-        onClick={(e) => {
-          if (isOpen) {
-            e.preventDefault();
-            setIsOpen(false);
-          }
-        }}
+        onClick={toggleMenu}
+        aria-label="Messages"
       >
         <MessageSquare className={`h-6 w-6 transition-colors duration-200 ${unreadCount > 0 ? 'text-primary-500' : ''}`} />
         <AnimatePresence>
@@ -90,14 +42,14 @@ export function MessageMenu() {
             </motion.div>
           )}
         </AnimatePresence>
-      </Link>
+      </button>
 
       <AnimatePresence>
         {isOpen && (
           <>
             <div 
               className="fixed inset-0 z-10 bg-black/5 backdrop-blur-sm" 
-              onClick={() => setIsOpen(false)}
+              onClick={closeMenu}
             />
             <motion.div
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -107,11 +59,24 @@ export function MessageMenu() {
               className="absolute right-0 mt-2 w-80 rounded-xl shadow-xl bg-white ring-1 ring-black/5 z-20 overflow-hidden"
             >
               <div className="max-h-[calc(100vh-200px)] overflow-y-auto divide-y divide-gray-100">
-                {messages.length > 0 ? (
+                {isLoading ? (
+                  <div className="p-4">
+                    <div className="animate-pulse space-y-3">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="space-y-2">
+                          <div className="h-4 bg-gray-200 rounded w-1/3" />
+                          <div className="h-3 bg-gray-200 rounded w-1/2" />
+                          <div className="h-3 bg-gray-200 rounded w-3/4" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : messages.length > 0 ? (
                   messages.map((message) => (
                     <Link
                       key={message.id}
                       href={`/messages?conversation=${message.conversation.id}`}
+                      onClick={closeMenu}
                     >
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}

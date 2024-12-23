@@ -2,19 +2,16 @@ export interface Message {
   id: string;
   content: string;
   senderId: string;
-  receiverId: string;
-  conversationId: string;
   isRead: boolean;
   createdAt: string;
-  sender: {
+  conversation: {
     id: string;
-    name: string;
-    email: string;
-  };
-  receiver: {
-    id: string;
-    name: string;
-    email: string;
+    otherUser: {
+      name: string;
+    };
+    dish: {
+      title: string;
+    };
   };
 }
 

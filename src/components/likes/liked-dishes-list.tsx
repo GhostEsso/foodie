@@ -1,33 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { useLikes } from '../../hooks/useLikes';
-import { Like } from '../../models/like/like.types';
-import Card from '../../components/ui/card';
-import { LikeButton } from './like-button';
-import Image from 'next/image';
-import Link from 'next/link';
+"use client";
 
-interface LikedDishesListProps {
-  userId: string;
-  className?: string;
-}
+import React from "react";
+import Card from "../../components/ui/card";
+import { LikeButton } from "./like-button";
+import Image from "next/image";
+import Link from "next/link";
+import { LikedDishesListProps } from "../../models/like/liked-dishes-list.types";
+import { useLikedDishesList } from "../../hooks/useLikedDishesList";
 
 export function LikedDishesList({ userId, className }: LikedDishesListProps) {
-  const [likedDishes, setLikedDishes] = useState<Like[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { getUserLikedDishes } = useLikes();
-
-  useEffect(() => {
-    const fetchLikedDishes = async () => {
-      try {
-        const dishes = await getUserLikedDishes(userId);
-        setLikedDishes(dishes);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchLikedDishes();
-  }, [userId, getUserLikedDishes]);
+  const { likedDishes, isLoading, handleUnlike } = useLikedDishesList({ userId });
 
   if (isLoading) {
     return (
@@ -80,9 +62,7 @@ export function LikedDishesList({ userId, className }: LikedDishesListProps) {
                 initialIsLiked={true}
                 onLikeChange={(isLiked) => {
                   if (!isLiked) {
-                    setLikedDishes((prev) =>
-                      prev.filter((d) => d.id !== like.id)
-                    );
+                    handleUnlike(like.id);
                   }
                 }}
               />

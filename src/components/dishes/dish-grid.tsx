@@ -1,19 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DishCard } from "./dish-card";
 import Button from "../ui/button";
 import { Grid2X2, List } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-
-interface DishGridProps {
-  dishes: any[];
-  currentPage: number;
-  totalPages: number;
-  viewMode?: "grid" | "list";
-  currentUserId?: string | null;
-}
+import { DishGridProps } from "../../models/dish/dish-grid.types";
+import { useDishGrid } from "../../hooks/useDishGrid";
 
 export function DishGrid({
   dishes,
@@ -22,22 +15,14 @@ export function DishGrid({
   viewMode = "grid",
   currentUserId,
 }: DishGridProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [selectedViewMode, setSelectedViewMode] = useState(viewMode);
-
-  const handleViewModeChange = (mode: "grid" | "list") => {
-    setSelectedViewMode(mode);
-    const params = new URLSearchParams(searchParams);
-    params.set("view", mode);
-    router.push(`/dishes?${params.toString()}`);
-  };
-
-  const handlePageChange = (page: number) => {
-    const params = new URLSearchParams(searchParams);
-    params.set("page", page.toString());
-    router.push(`/dishes?${params.toString()}`);
-  };
+  const {
+    selectedViewMode,
+    handleViewModeChange,
+    handlePageChange,
+    getGridClassName,
+    getCardClassName,
+    getImageClassName
+  } = useDishGrid({ viewMode });
 
   return (
     <div className="space-y-6">
@@ -65,11 +50,7 @@ export function DishGrid({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.2 }}
-          className={
-            selectedViewMode === "grid"
-              ? "grid gap-6 md:grid-cols-2 lg:grid-cols-3"
-              : "space-y-4"
-          }
+          className={getGridClassName()}
         >
           {dishes.map((dish) => (
             <motion.div
@@ -83,8 +64,8 @@ export function DishGrid({
               <DishCard
                 dish={dish}
                 currentUserId={currentUserId}
-                className={selectedViewMode === "list" ? "!flex gap-6" : ""}
-                imageClassName={selectedViewMode === "list" ? "!w-48 !h-48" : ""}
+                className={getCardClassName()}
+                imageClassName={getImageClassName()}
               />
             </motion.div>
           ))}

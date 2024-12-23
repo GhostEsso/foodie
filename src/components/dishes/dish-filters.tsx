@@ -1,63 +1,18 @@
 "use client";
 
 import React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
 import Button from "../ui/button";
 import { Search } from "lucide-react";
-
-interface DishFiltersProps {
-  defaultValues?: {
-    search?: string;
-    available?: string;
-    sort?: string;
-  };
-}
+import { DishFiltersProps } from "../../models/dish/dish-filters.types";
+import { useDishFilters } from "../../hooks/useDishFilters";
 
 export function DishFilters({ defaultValues = {} }: DishFiltersProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const params = new URLSearchParams(searchParams);
-
-    // Mettre à jour les paramètres de recherche
-    formData.forEach((value, key) => {
-      if (value) {
-        params.set(key, value.toString());
-      } else {
-        params.delete(key);
-      }
-    });
-
-    startTransition(() => {
-      router.push(`/dishes?${params.toString()}`);
-    });
-  };
-
-  const handleReset = () => {
-    startTransition(() => {
-      router.push("/dishes");
-    });
-  };
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    const params = new URLSearchParams(searchParams);
-
-    if (value) {
-      params.set("search", value);
-    } else {
-      params.delete("search");
-    }
-
-    startTransition(() => {
-      router.push(`/dishes?${params.toString()}`);
-    });
-  };
+  const {
+    isPending,
+    handleSubmit,
+    handleReset,
+    handleSearch
+  } = useDishFilters({ defaultValues });
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

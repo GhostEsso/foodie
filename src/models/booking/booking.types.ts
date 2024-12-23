@@ -24,6 +24,16 @@ export interface Booking {
       } | null;
     };
   };
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    building: {
+      id: string;
+      name: string;
+      address: string;
+    } | null;
+  };
 }
 
 export type BookingStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";

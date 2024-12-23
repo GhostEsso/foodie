@@ -1,47 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React from "react";
 import { formatPrice } from "../../lib/utils";
-
-interface Booking {
-  id: string;
-  portions: number;
-  total: number;
-  status: string;
-  pickupTime: string;
-  user: {
-    name: string;
-    email: string;
-    apartment: string;
-    building: {
-      name: string;
-    };
-  };
-}
-
-interface Dish {
-  id: string;
-  title: string;
-  bookings: Booking[];
-}
+import { useMyBookings } from "../../hooks/useMyBookings";
 
 export function MyBookings() {
-  const [dishes, setDishes] = useState<Dish[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    fetch("/api/dishes/my-bookings")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) {
-          throw new Error(data.error);
-        }
-        setDishes(data);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setIsLoading(false));
-  }, []);
+  const { dishes, isLoading, error, getStatusLabel } = useMyBookings();
 
   if (isLoading) {
     return <div className="text-center py-8">Chargement...</div>;
@@ -99,13 +63,7 @@ export function MyBookings() {
                         {booking.portions} portion{booking.portions > 1 ? "s" : ""}
                       </p>
                       <span className="inline-block px-2 py-1 text-xs rounded-full bg-primary-100 text-primary-800">
-                        {booking.status === "PENDING"
-                          ? "En attente"
-                          : booking.status === "APPROVED"
-                          ? "Approuvée"
-                          : booking.status === "REJECTED"
-                          ? "Rejetée"
-                          : "Annulée"}
+                        {getStatusLabel(booking.status)}
                       </span>
                     </div>
                   </div>
