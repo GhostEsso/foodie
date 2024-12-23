@@ -1,38 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Button from "../ui/button";
 import { formatPrice } from "../../lib/utils";
 import { cn } from "../../lib/utils";
 import { Heart } from "lucide-react";
-
-interface DishCardProps {
-  dish: {
-    id: string;
-    title: string;
-    description: string;
-    price: number;
-    images: string[];
-    available: boolean;
-    portions: number;
-    likesCount: number;
-    availableFrom: string | null;
-    availableTo: string | null;
-    user: {
-      id: string;
-      name: string;
-      building: {
-        name: string;
-      };
-    };
-  };
-  currentUserId?: string | null;
-  showActions?: boolean;
-  className?: string;
-  imageClassName?: string;
-}
+import { DishCardProps } from "../../models/dish/dish-card.types";
+import { useDishCard } from "../../hooks/useDishCard";
 
 export function DishCard({ 
   dish, 
@@ -41,40 +16,13 @@ export function DishCard({
   className,
   imageClassName 
 }: DishCardProps) {
-  const isAuthor = currentUserId === dish.user.id;
-  const [isLiked, setIsLiked] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [likesCount, setLikesCount] = useState(dish.likesCount);
-
-  useEffect(() => {
-    if (currentUserId) {
-      fetch(`/api/dishes/${dish.id}/like`)
-        .then(res => res.json())
-        .then(data => {
-          setIsLiked(data.liked);
-          setLikesCount(data.likesCount);
-        })
-        .catch(console.error);
-    }
-  }, [dish.id, currentUserId]);
-
-  const handleLike = async () => {
-    if (!currentUserId) return;
-    
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/dishes/${dish.id}/like`, {
-        method: 'POST',
-      });
-      const data = await response.json();
-      setIsLiked(data.liked);
-      setLikesCount(data.likesCount);
-    } catch (error) {
-      console.error('Erreur lors du like:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    isLiked,
+    isLoading,
+    likesCount,
+    isAuthor,
+    handleLike
+  } = useDishCard({ dish, currentUserId, showActions, className, imageClassName });
 
   return (
     <div className={cn(

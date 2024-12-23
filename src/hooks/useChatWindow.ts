@@ -4,7 +4,6 @@ import { ChatWindowProps, ChatWindowState } from '../models/chat/chat-window.typ
 
 export function useChatWindow({
   conversationId,
-  currentUserId,
   otherUser
 }: ChatWindowProps) {
   const { messages, sendMessage } = useMessages(conversationId);
