@@ -1,63 +1,43 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import { useMessages } from '../../hooks/useMessages';
 import { formatRelativeTime } from '../../lib/utils';
 import { Send } from 'lucide-react';
+import { useChatWindow } from '../../hooks/useChatWindow';
+import { ChatWindowProps } from '../../models/chat/chat-window.types';
 
-interface ChatWindowProps {
-  conversationId: string;
-  currentUserId: string;
-  otherUser: {
-    id: string;
-    name: string;
-  };
-  dish: {
-    title: string;
-  };
-}
-
-export function ChatWindow({
-  conversationId,
-  currentUserId,
-  otherUser,
-  dish
-}: ChatWindowProps) {
-  const { messages, sendMessage } = useMessages(conversationId);
-  const [messageText, setMessageText] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!messageText.trim()) return;
-    await sendMessage(messageText, otherUser.id);
-    setMessageText("");
-  };
+export function ChatWindow(props: ChatWindowProps) {
+  const {
+    messages,
+    messageText,
+    messagesEndRef,
+    setMessageText,
+    handleSubmit,
+    handleScroll
+  } = useChatWindow(props);
 
   return (
     <div className="flex flex-col h-full">
       {/* En-tête */}
       <div className="p-4 border-b">
-        <h2 className="font-semibold">{otherUser.name}</h2>
-        <p className="text-sm text-gray-500">À propos de : {dish.title}</p>
+        <h2 className="font-semibold">{props.otherUser.name}</h2>
+        <p className="text-sm text-gray-500">À propos de : {props.dish.title}</p>
       </div>
 
       {/* Zone des messages avec scroll dédié */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div 
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+        onScroll={handleScroll}
+      >
         {messages.map((message) => (
           <div
             key={message.id}
             className={`flex ${
-              message.senderId === currentUserId ? 'justify-end' : 'justify-start'
+              message.senderId === props.currentUserId ? 'justify-end' : 'justify-start'
             }`}
           >
             <div
               className={`max-w-[70%] rounded-lg p-3 ${
-                message.senderId === currentUserId
+                message.senderId === props.currentUserId
                   ? 'bg-primary-500 text-white'
                   : 'bg-gray-100'
               }`}
@@ -65,7 +45,7 @@ export function ChatWindow({
               <p className="text-sm">{message.content}</p>
               <p
                 className={`text-xs mt-1 ${
-                  message.senderId === currentUserId
+                  message.senderId === props.currentUserId
                     ? 'text-primary-100'
                     : 'text-gray-500'
                 }`}
