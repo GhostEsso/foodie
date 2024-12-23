@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { NotificationMenuState, FormatMessageOptions } from "../models/notification/notification-menu.types";
-import { useNotifications } from "./useNotifications";
+import { useState, useCallback, useEffect } from 'react';
+import { NotificationMenuState, FormatMessageOptions } from '../models/notification/notification-menu.types';
 
 export function useNotificationMenu() {
   const [state, setState] = useState<NotificationMenuState>({
@@ -9,26 +8,49 @@ export function useNotificationMenu() {
     isLoading: true
   });
 
-  const { getNotifications, markNotificationAsRead } = useNotifications();
-
   const fetchNotifications = useCallback(async () => {
     try {
+      console.log('Récupération des notifications...');
       setState(prev => ({ ...prev, isLoading: true }));
-      const notifications = await getNotifications();
+      
+      const response = await fetch('/api/notifications', {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des notifications');
+      }
+      
+      const data = await response.json();
+      console.log('Notifications reçues:', data);
+      
       setState(prev => ({
         ...prev,
-        notifications,
+        notifications: data.notifications || [],
         isLoading: false
       }));
     } catch (error) {
       console.error("Erreur lors de la récupération des notifications:", error);
       setState(prev => ({ ...prev, isLoading: false }));
     }
-  }, [getNotifications]);
+  }, []);
 
   const markAsRead = useCallback(async (notificationId: string) => {
     try {
-      await markNotificationAsRead(notificationId);
+      console.log('Marquage de la notification comme lue:', notificationId);
+      const response = await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ notificationId }),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors du marquage de la notification');
+      }
+
       setState(prev => ({
         ...prev,
         notifications: prev.notifications.map(notif =>
@@ -38,7 +60,7 @@ export function useNotificationMenu() {
     } catch (error) {
       console.error("Erreur lors du marquage de la notification comme lue:", error);
     }
-  }, [markNotificationAsRead]);
+  }, []);
 
   const toggleMenu = useCallback(() => {
     setState(prev => ({ ...prev, isOpen: !prev.isOpen }));
@@ -53,6 +75,7 @@ export function useNotificationMenu() {
   }, []);
 
   useEffect(() => {
+    console.log('Initialisation des notifications');
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);

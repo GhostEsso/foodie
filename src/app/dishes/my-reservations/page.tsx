@@ -7,7 +7,11 @@ import { useBookings } from "../../../hooks/useBookings";
 
 export default function MyReservationsPage() {
   const router = useRouter();
-  const { bookings, isLoading, error, refreshBookings } = useBookings();
+  const { bookings, isLoading, error, refreshBookings } = useBookings({
+    filters: {
+      status: "PENDING"
+    }
+  });
 
   if (isLoading) {
     return (
@@ -41,7 +45,7 @@ export default function MyReservationsPage() {
             Réservations en attente
           </h1>
           <PendingBookings 
-            bookings={bookings} 
+            bookings={bookings || []} 
             onStatusChange={() => {
               refreshBookings();
               router.refresh();

@@ -5,8 +5,13 @@ import { formatName } from "../../../lib/utils";
 
 export async function GET(request: Request) {
   try {
+    console.log('GET /api/bookings - Début');
+    
     const session = await getSession();
+    console.log('Session:', session);
+    
     if (!session) {
+      console.log('Pas de session trouvée');
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
@@ -17,6 +22,14 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
     const skip = (page - 1) * pageSize;
+
+    console.log('Paramètres de recherche:', {
+      status,
+      userId,
+      dishId,
+      page,
+      pageSize
+    });
 
     const where = {
       OR: [
@@ -30,6 +43,8 @@ export async function GET(request: Request) {
     if (userId) {
       where.userId = userId;
     }
+
+    console.log('Critères de recherche:', where);
 
     const [bookings, totalCount] = await Promise.all([
       prisma.booking.findMany({
@@ -81,7 +96,10 @@ export async function GET(request: Request) {
       prisma.booking.count({ where })
     ]);
 
-    return NextResponse.json({
+    console.log('Nombre de réservations trouvées:', bookings.length);
+    console.log('Total count:', totalCount);
+
+    const response = {
       bookings: bookings.map(booking => ({
         ...booking,
         createdAt: booking.createdAt.toISOString(),
@@ -89,9 +107,12 @@ export async function GET(request: Request) {
         pickupTime: booking.pickupTime.toISOString()
       })),
       totalCount
-    });
+    };
+
+    console.log('GET /api/bookings - Succès');
+    return NextResponse.json(response);
   } catch (error) {
-    console.error("Erreur lors de la récupération des réservations:", error);
+    console.error("Erreur détaillée lors de la récupération des réservations:", error);
     return NextResponse.json(
       { error: "Erreur lors de la récupération des réservations" },
       { status: 500 }

@@ -1,38 +1,27 @@
 "use client";
 
-import { formatDistanceToNow } from "date-fns";
-import { fr } from "date-fns/locale";
+import { useEffect } from "react";
 import { useBookings } from "../hooks/useBookings";
+import { Loading } from "./ui/loading";
+import { formatPrice } from "../lib/utils";
+import Button from "./ui/button";
 
-interface PendingBookingsProps {
-  className?: string;
-}
-
-export function PendingBookings({ className }: PendingBookingsProps) {
-  const { bookings, isLoading, pendingBookings, updateStatus } = useBookings({
-    filters: {
-      status: "PENDING"
-    }
+export function PendingBookings() {
+  console.log('Rendu PendingBookings');
+  
+  const { bookings, isLoading, error, updateStatus } = useBookings({
+    filters: { status: "PENDING" }
   });
 
-  if (isLoading) {
-    return (
-      <div className="animate-pulse space-y-4">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-gray-100 p-4 rounded-lg">
-            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-            <div className="h-3 bg-gray-200 rounded w-1/2" />
-          </div>
-        ))}
-      </div>
-    );
-  }
+  useEffect(() => {
+    console.log('État actuel:', { bookings, isLoading, error });
+  }, [bookings, isLoading, error]);
 
-  const handleAccept = async (bookingId: string) => {
+  const handleApprove = async (bookingId: string) => {
     try {
       await updateStatus(bookingId, "APPROVED");
     } catch (error) {
-      console.error("Erreur lors de l'acceptation de la réservation:", error);
+      console.error("Erreur lors de l'approbation:", error);
     }
   };
 
@@ -40,78 +29,77 @@ export function PendingBookings({ className }: PendingBookingsProps) {
     try {
       await updateStatus(bookingId, "REJECTED");
     } catch (error) {
-      console.error("Erreur lors du rejet de la réservation:", error);
+      console.error("Erreur lors du rejet:", error);
     }
   };
 
-  if (!bookings || bookings.length === 0) {
+  if (isLoading) {
+    console.log('Affichage du loading');
+    return <Loading />;
+  }
+
+  if (error) {
+    console.log('Affichage de l\'erreur:', error);
     return (
-      <div className="text-center text-gray-500 py-4">
+      <div className="text-red-500 p-4 text-center">
+        Une erreur est survenue: {error}
+      </div>
+    );
+  }
+
+  if (!bookings || bookings.length === 0) {
+    console.log('Aucune réservation trouvée');
+    return (
+      <div className="text-gray-500 p-4 text-center">
         Aucune réservation en attente
       </div>
     );
   }
 
+  console.log('Affichage des réservations:', bookings);
+
   return (
-    <div className={className}>
-      <div className="space-y-4">
-        {bookings.map((booking) => {
-          const isPending = pendingBookings.has(booking.id);
-          return (
-            <div
-              key={booking.id}
-              className={`bg-white p-4 rounded-lg shadow-sm border border-gray-200 transition-opacity duration-200 ${
-                isPending ? 'opacity-50' : ''
-              }`}
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold mb-4">Réservations en attente</h2>
+      {bookings.map((booking) => (
+        <div
+          key={booking.id}
+          className="bg-white rounded-lg shadow p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+        >
+          <div className="flex-grow">
+            <h3 className="font-medium">{booking.dish.title}</h3>
+            <p className="text-sm text-gray-600">
+              Client: {booking.user.name} ({booking.user.email})
+            </p>
+            <p className="text-sm text-gray-600">
+              {booking.portions} portion{booking.portions > 1 ? "s" : ""} •{" "}
+              {formatPrice(booking.total)}
+            </p>
+            {booking.user.building && (
+              <p className="text-sm text-gray-600">
+                Bâtiment: {booking.user.building.name}
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => handleApprove(booking.id)}
+              variant="primary"
+              size="sm"
+              className="bg-green-500 hover:bg-green-600"
             >
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h3 className="font-medium">{booking.user.name}</h3>
-                  <p className="text-sm text-gray-600">{booking.dish.title}</p>
-                  {booking.user.building && (
-                    <p className="text-sm text-gray-500">
-                      {booking.user.building.name}
-                    </p>
-                  )}
-                </div>
-                <span className="text-xs text-gray-500">
-                  {formatDistanceToNow(new Date(booking.createdAt), {
-                    addSuffix: true,
-                    locale: fr,
-                  })}
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <div>
-                  <p className="text-gray-600">
-                    {booking.portions} portion{booking.portions > 1 ? "s" : ""} •{" "}
-                    {booking.total.toFixed(2)}€
-                  </p>
-                  <p className="text-gray-500">
-                    Retrait : {new Date(booking.pickupTime).toLocaleString("fr-FR")}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleReject(booking.id)}
-                    className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={isPending}
-                  >
-                    Refuser
-                  </button>
-                  <button
-                    onClick={() => handleAccept(booking.id)}
-                    className="px-3 py-1 text-white bg-primary-500 hover:bg-primary-600 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={isPending}
-                  >
-                    Accepter
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              Accepter
+            </Button>
+            <Button
+              onClick={() => handleReject(booking.id)}
+              variant="danger"
+              size="sm"
+            >
+              Refuser
+            </Button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

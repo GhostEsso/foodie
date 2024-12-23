@@ -1,156 +1,117 @@
-import { useState, useEffect, useCallback } from 'react';
-import {
-    Booking,
-    BookingFilters,
-    BookingSortOptions,
-    BookingStatus
-} from '../models/booking/booking.types';
+import { useState, useEffect, useCallback } from "react";
 
 interface UseBookingsOptions {
-  filters?: BookingFilters;
-  sort?: BookingSortOptions;
+  filters?: {
+    status?: string;
+    userId?: string;
+    dishId?: string;
+  };
   page?: number;
   pageSize?: number;
 }
 
-export function useBookings(options: UseBookingsOptions = {}) {
-  const {
-    filters,
-    sort,
-    page = 1,
-    pageSize = 10
-  } = options;
+interface UseBookingsReturn {
+  bookings: any[];
+  isLoading: boolean;
+  error: string | null;
+  totalCount: number;
+  updateStatus: (bookingId: string, status: string) => Promise<void>;
+  refetch: () => Promise<void>;
+}
 
-  const [state, setState] = useState<{
-    bookings: Booking[];
-    totalCount: number;
-    isLoading: boolean;
-    isRefreshing: boolean;
-    error: string | null;
-    pendingBookings: Set<string>;
-  }>({
-    bookings: [],
-    totalCount: 0,
-    isLoading: true,
-    isRefreshing: false,
-    error: null,
-    pendingBookings: new Set()
-  });
+export function useBookings({
+  filters = {},
+  page = 1,
+  pageSize = 10,
+}: UseBookingsOptions = {}): UseBookingsReturn {
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const fetchBookings = useCallback(async (showLoading = true) => {
-    if (state.bookings.length > 0) {
-      showLoading = false;
-    }
-
-    setState(prev => ({
-      ...prev,
-      isLoading: showLoading,
-      isRefreshing: !showLoading,
-      error: null
-    }));
-
+  const fetchBookings = useCallback(async () => {
     try {
-      const queryParams = new URLSearchParams();
+      console.log('Fetching bookings with filters:', filters);
+      const searchParams = new URLSearchParams();
       
-      if (filters?.status) {
-        queryParams.append('status', filters.status);
-      }
-      if (filters?.userId) {
-        queryParams.append('userId', filters.userId);
-      }
-      if (filters?.dishId) {
-        queryParams.append('dishId', filters.dishId);
-      }
-      if (filters?.fromDate) {
-        queryParams.append('fromDate', filters.fromDate.toISOString());
-      }
-      if (filters?.toDate) {
-        queryParams.append('toDate', filters.toDate.toISOString());
-      }
-      if (sort) {
-        queryParams.append('sortField', sort.field);
-        queryParams.append('sortDirection', sort.direction);
-      }
-      queryParams.append('page', page.toString());
-      queryParams.append('pageSize', pageSize.toString());
+      if (filters.status) searchParams.append("status", filters.status);
+      if (filters.userId) searchParams.append("userId", filters.userId);
+      if (filters.dishId) searchParams.append("dishId", filters.dishId);
+      searchParams.append("page", page.toString());
+      searchParams.append("pageSize", pageSize.toString());
 
-      const response = await fetch(`/api/bookings?${queryParams}`, {
+      const response = await fetch(`/api/bookings?${searchParams.toString()}`, {
         credentials: 'include'
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur lors de la récupération des réservations');
+        throw new Error(errorData.error || "Erreur lors de la récupération des réservations");
       }
-      
+
       const data = await response.json();
-      setState(prev => ({
-        ...prev,
-        bookings: data.bookings,
-        totalCount: data.totalCount,
-        isLoading: false,
-        isRefreshing: false,
-        error: null
-      }));
-    } catch (error) {
-      console.error('Erreur fetchBookings:', error);
-      setState(prev => ({
-        ...prev,
-        error: error instanceof Error ? error.message : 'Une erreur est survenue',
-        isLoading: false,
-        isRefreshing: false
-      }));
+      console.log('Bookings received:', data);
+      
+      setBookings(data.bookings);
+      setTotalCount(data.totalCount);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching bookings:', err);
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+    } finally {
+      setIsLoading(false);
+      setIsInitialized(true);
     }
-  }, [filters, sort, page, pageSize]);
+  }, [filters, page, pageSize]);
 
-  const updateStatus = async (bookingId: string, status: BookingStatus) => {
-    setState(prev => ({
-      ...prev,
-      pendingBookings: new Set([...prev.pendingBookings, bookingId])
-    }));
-
+  const updateStatus = async (bookingId: string, status: string) => {
     try {
-      const endpoint = status === 'APPROVED' ? 'approve' : 'reject';
-      const response = await fetch(`/api/bookings/${bookingId}/${endpoint}`, {
-        method: 'POST',
+      console.log('Updating booking status:', { bookingId, status });
+      setIsLoading(true);
+      
+      const response = await fetch(`/api/bookings/${bookingId}/status`, {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({ status }),
         credentials: 'include'
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur lors de la mise à jour du statut');
+        throw new Error(errorData.error || "Erreur lors de la mise à jour du statut");
       }
 
-      const updatedBooking = await response.json();
-      console.log('Réservation mise à jour:', updatedBooking);
-
-      setState(prev => ({
-        ...prev,
-        bookings: prev.bookings.filter(b => b.id !== bookingId),
-        pendingBookings: new Set([...prev.pendingBookings].filter(id => id !== bookingId))
-      }));
-
-    } catch (error) {
-      console.error('Erreur updateStatus:', error);
-      setState(prev => ({
-        ...prev,
-        pendingBookings: new Set([...prev.pendingBookings].filter(id => id !== bookingId)),
-        error: error instanceof Error ? error.message : 'Une erreur est survenue'
-      }));
-      throw error;
+      await fetchBookings();
+    } catch (err) {
+      console.error('Error updating booking status:', err);
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBookings(true);
+    console.log('useEffect triggered, isInitialized:', isInitialized);
+    if (!isInitialized) {
+      fetchBookings();
+    }
+  }, [fetchBookings, isInitialized]);
+
+  const refetch = useCallback(() => {
+    console.log('Refetching bookings');
+    return fetchBookings();
   }, [fetchBookings]);
 
   return {
-    ...state,
+    bookings,
+    isLoading,
+    error,
+    totalCount,
     updateStatus,
-    refreshBookings: () => fetchBookings(false)
+    refetch
   };
 } 

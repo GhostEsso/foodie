@@ -2,88 +2,110 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../../../lib/prisma";
 import { getSession } from "../../../../../lib/auth";
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
-export async function POST(request: Request, { params }: RouteParams) {
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
+    console.log('PUT /api/bookings/[id]/status - Début');
+    console.log('Booking ID:', params.id);
+    
     const session = await getSession();
+    console.log('Session:', session);
+    
     if (!session) {
+      console.log('Pas de session trouvée');
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
     const { status } = await request.json();
+    console.log('Nouveau statut:', status);
 
-    // Vérifier que la réservation existe et que l'utilisateur est le propriétaire du plat
+    // Vérifier que le statut est valide
+    if (!["PENDING", "APPROVED", "REJECTED", "COMPLETED", "CANCELLED"].includes(status)) {
+      console.log('Statut invalide');
+      return NextResponse.json(
+        { error: "Statut invalide" },
+        { status: 400 }
+      );
+    }
+
+    // Récupérer la réservation
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       include: {
         dish: {
-          select: {
-            userId: true,
-            title: true
+          include: {
+            user: true
           }
         },
-        user: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
+        user: true
       }
     });
 
+    console.log('Réservation trouvée:', booking);
+
     if (!booking) {
-      return NextResponse.json({ error: "Réservation non trouvée" }, { status: 404 });
+      console.log('Réservation non trouvée');
+      return NextResponse.json(
+        { error: "Réservation non trouvée" },
+        { status: 404 }
+      );
     }
 
+    // Vérifier que l'utilisateur est le propriétaire du plat
     if (booking.dish.userId !== session.id) {
-      return NextResponse.json({ error: "Non autoris��" }, { status: 403 });
+      console.log('Utilisateur non autorisé');
+      return NextResponse.json(
+        { error: "Non autorisé à modifier cette réservation" },
+        { status: 403 }
+      );
     }
 
-    // Mettre à jour le statut de la réservation
+    // Mettre à jour le statut
     const updatedBooking = await prisma.booking.update({
       where: { id: params.id },
       data: { status },
       include: {
         dish: {
-          select: {
-            title: true,
-            user: {
-              select: {
-                name: true
-              }
-            }
+          include: {
+            user: true
           }
         },
-        user: {
-          select: {
-            id: true,
-            name: true
-          }
+        user: true
+      }
+    });
+
+    console.log('Réservation mise à jour:', updatedBooking);
+
+    // Créer une notification pour l'utilisateur
+    let message = "";
+    if (status === "APPROVED") {
+      message = `Votre réservation pour "${booking.dish.title}" a été acceptée`;
+    } else if (status === "REJECTED") {
+      message = `Votre réservation pour "${booking.dish.title}" a été refusée`;
+    }
+
+    if (message) {
+      await prisma.notification.create({
+        data: {
+          userId: booking.userId,
+          type: "BOOKING_STATUS",
+          message,
+          data: {
+            bookingId: booking.id,
+            status
+          },
+          read: false
         }
-      }
-    });
+      });
+      console.log('Notification créée');
+    }
 
-    // Créer une notification pour l'utilisateur qui a fait la réservation
-    const notificationMessage = status === "APPROVED"
-      ? `Votre réservation pour "${booking.dish.title}" a été acceptée`
-      : `Votre réservation pour "${booking.dish.title}" a été refusée`;
-
-    await prisma.notification.create({
-      data: {
-        type: status === "APPROVED" ? "BOOKING_APPROVED" : "BOOKING_REJECTED",
-        message: notificationMessage,
-        userId: booking.user.id
-      }
-    });
-
+    console.log('PUT /api/bookings/[id]/status - Succès');
     return NextResponse.json(updatedBooking);
   } catch (error) {
-    console.error("Erreur lors de la mise à jour du statut:", error);
+    console.error("Erreur détaillée lors de la mise à jour du statut:", error);
     return NextResponse.json(
       { error: "Erreur lors de la mise à jour du statut" },
       { status: 500 }
