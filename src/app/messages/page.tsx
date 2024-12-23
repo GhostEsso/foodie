@@ -1,53 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { ConversationList } from "../../components/chat/conversation-list";
 import { ChatWindow } from "../../components/chat/chat-window";
 import { MessageSquare } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-
-interface Conversation {
-  id: string;
-  otherUser: {
-    id: string;
-    name: string;
-  };
-  dish: {
-    title: string;
-  };
-}
+import { useMessagesPage } from "../../hooks/useMessagesPage";
 
 export default function MessagesPage() {
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [session, setSession] = useState<any>(null);
-  const searchParams = useSearchParams();
-
-  React.useEffect(() => {
-    const fetchSession = async () => {
-      const response = await fetch("/api/auth/session");
-      const data = await response.json();
-      setSession(data);
-    };
-    fetchSession();
-  }, []);
-
-  React.useEffect(() => {
-    const conversationId = searchParams.get("conversation");
-    if (conversationId) {
-      const fetchConversation = async () => {
-        try {
-          const response = await fetch(`/api/conversations/${conversationId}`);
-          if (response.ok) {
-            const conversation = await response.json();
-            setSelectedConversation(conversation);
-          }
-        } catch (error) {
-          console.error("Erreur lors de la récupération de la conversation:", error);
-        }
-      };
-      fetchConversation();
-    }
-  }, [searchParams]);
+  const { selectedConversation, setSelectedConversation, session } = useMessagesPage();
 
   return (
     <div className="min-h-screen bg-white">

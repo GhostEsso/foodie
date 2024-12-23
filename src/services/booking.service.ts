@@ -1,12 +1,12 @@
+import { BookingStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import {
-    BookingFilters,
-    BookingSortOptions,
-    BookingResponse,
-    BookingStatus,
-    CreateBookingData,
-    UpdateBookingData,
-    Booking
+  BookingFilters,
+  BookingSortOptions,
+  BookingResponse,
+  CreateBookingData,
+  UpdateBookingData,
+  Booking
 } from '../models/booking/booking.types';
 
 export class BookingService {
@@ -70,7 +70,7 @@ export class BookingService {
         createdAt: booking.createdAt.toISOString(),
         updatedAt: booking.updatedAt.toISOString(),
         pickupTime: booking.pickupTime.toISOString()
-      })),
+      })) as unknown as Booking[],
       totalCount
     };
   }
@@ -273,5 +273,47 @@ export class BookingService {
       })),
       totalCount
     };
+  }
+
+  async getUserBookings(userId: string): Promise<Booking[]> {
+    const bookings = await prisma.booking.findMany({
+      where: {
+        userId
+      },
+      include: {
+        dish: {
+          select: {
+            id: true,
+            title: true,
+            price: true,
+            images: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                building: {
+                  select: {
+                    id: true,
+                    name: true,
+                    address: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    return bookings.map(booking => ({
+      ...booking,
+      createdAt: booking.createdAt.toISOString(),
+      updatedAt: booking.updatedAt.toISOString(),
+      pickupTime: booking.pickupTime.toISOString()
+    })) as unknown as Booking[];
   }
 } 

@@ -17,21 +17,16 @@ export interface Booking {
       id: string;
       name: string;
       email: string;
-      building?: {
+      building: {
         id: string;
         name: string;
         address: string;
-      };
+      } | null;
     };
   };
 }
 
-export enum BookingStatus {
-  PENDING = "PENDING",
-  APPROVED = "APPROVED",
-  REJECTED = "REJECTED",
-  CANCELLED = "CANCELLED"
-}
+export type BookingStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
 
 export interface BookingFilters {
   status?: BookingStatus;

@@ -11,7 +11,7 @@ export interface BuildingWithUsers extends Building {
     id: string;
     name: string;
     email: string;
-    apartment?: string;
+    apartment: string | null;
   }[];
   _count: {
     users: number;

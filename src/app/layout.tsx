@@ -1,21 +1,21 @@
-import Link from 'next/link'
-import { Inter } from 'next/font/google'
-import './globals.css'
-import { getSession } from '../lib/auth'
-import React from 'react'
-import { Header } from '../components/header'
+import Link from "next/link";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { getSession } from "../lib/auth";
+import React from "react";
+import { Header } from "../components/header";
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: 'Foody - Partagez des plats avec vos voisins',
-  description: 'Découvrez et partagez des plats faits maison avec vos voisins',
-}
+  title: "Foody - Partagez des plats avec vos voisins",
+  description: "Découvrez et partagez des plats faits maison avec vos voisins",
+};
 
 export default async function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   const session = await getSession();
 
@@ -25,9 +25,7 @@ export default async function RootLayout({
         <Header session={session} />
 
         {/* Main Content */}
-        <main className="flex-grow">
-          {children}
-        </main>
+        <main className="flex-grow">{children}</main>
 
         {/* Footer */}
         <footer className="bg-white border-t">
@@ -38,7 +36,8 @@ export default async function RootLayout({
                   À propos
                 </h3>
                 <p className="mt-4 text-base text-gray-500">
-                  Foody est une plateforme qui permet de partager des plats faits maison avec vos voisins.
+                  Foody est une plateforme qui permet de partager des plats
+                  faits maison avec vos voisins.
                 </p>
               </div>
               <div>
@@ -47,12 +46,18 @@ export default async function RootLayout({
                 </h3>
                 <ul className="mt-4 space-y-4">
                   <li>
-                    <Link href="/about" className="text-base text-gray-500 hover:text-gray-900">
+                    <Link
+                      href="/about"
+                      className="text-base text-gray-500 hover:text-gray-900"
+                    >
                       Comment ça marche
                     </Link>
                   </li>
                   <li>
-                    <Link href="/contact" className="text-base text-gray-500 hover:text-gray-900">
+                    <Link
+                      href="/contact"
+                      className="text-base text-gray-500 hover:text-gray-900"
+                    >
                       Contact
                     </Link>
                   </li>
@@ -64,12 +69,18 @@ export default async function RootLayout({
                 </h3>
                 <ul className="mt-4 space-y-4">
                   <li>
-                    <Link href="/privacy" className="text-base text-gray-500 hover:text-gray-900">
+                    <Link
+                      href="/privacy"
+                      className="text-base text-gray-500 hover:text-gray-900"
+                    >
                       Politique de confidentialité
                     </Link>
                   </li>
                   <li>
-                    <Link href="/terms" className="text-base text-gray-500 hover:text-gray-900">
+                    <Link
+                      href="/terms"
+                      className="text-base text-gray-500 hover:text-gray-900"
+                    >
                       Conditions d'utilisation
                     </Link>
                   </li>
@@ -85,5 +96,5 @@ export default async function RootLayout({
         </footer>
       </body>
     </html>
-  )
+  );
 }

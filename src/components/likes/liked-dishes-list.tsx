@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { useLikes } from '../../../hooks/useLikes';
-import { Like } from '../../../models/like/like.types';
-import { Card } from '../../ui/card';
+import React, { useEffect, useState } from 'react';
+import { useLikes } from '../../hooks/useLikes';
+import { Like } from '../../models/like/like.types';
+import Card from '../../components/ui/card';
 import { LikeButton } from './like-button';
 import Image from 'next/image';
 import Link from 'next/link';

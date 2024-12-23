@@ -1,11 +1,12 @@
 import { prisma } from '../lib/prisma';
+import { Prisma } from '@prisma/client';
 import {
-    BuildingFilters,
-    BuildingSortOptions,
-    BuildingResponse,
-    CreateBuildingData,
-    UpdateBuildingData,
-    BuildingWithUsers
+  BuildingFilters,
+  BuildingSortOptions,
+  BuildingResponse,
+  CreateBuildingData,
+  UpdateBuildingData,
+  BuildingWithUsers
 } from '../models/building/building.types';
 
 export class BuildingService {
@@ -17,7 +18,7 @@ export class BuildingService {
   ): Promise<BuildingResponse> {
     const skip = (page - 1) * pageSize;
 
-    const where = {
+    const where: Prisma.BuildingWhereInput = {
       ...(filters?.search && {
         OR: [
           { name: { contains: filters.search, mode: 'insensitive' } },
@@ -50,7 +51,7 @@ export class BuildingService {
           }
         },
         orderBy: sort ? {
-          [sort.field]: sort.direction
+          [sort.field]: sort.direction as Prisma.SortOrder
         } : {
           createdAt: 'desc'
         },
@@ -65,7 +66,7 @@ export class BuildingService {
         ...building,
         createdAt: building.createdAt.toISOString(),
         updatedAt: building.updatedAt.toISOString()
-      })),
+      })) as unknown as BuildingWithUsers[],
       totalCount
     };
   }

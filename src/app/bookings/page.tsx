@@ -1,41 +1,18 @@
+import React from "react";
 import { getSession } from "../../lib/auth";
-import { prisma } from "../../lib/prisma";
 import { redirect } from "next/navigation";
 import { formatPrice } from "../../lib/utils";
 import Button from "../../components/ui/button";
 import Link from "next/link";
+import { BookingService } from "../../services/booking.service";
+
+const bookingService = new BookingService();
 
 async function getBookings() {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  return prisma.booking.findMany({
-    where: {
-      userId: session.id,
-    },
-    include: {
-      dish: {
-        select: {
-          title: true,
-          price: true,
-          images: true,
-          user: {
-            select: {
-              name: true,
-              building: {
-                select: {
-                  name: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  return bookingService.getUserBookings(session.id);
 }
 
 export default async function BookingsPage() {
@@ -62,7 +39,7 @@ export default async function BookingsPage() {
                         {booking.dish.title}
                       </h3>
                       <p className="text-gray-600 mb-1">
-                        Par {booking.dish.user.name} • {booking?.dish.user.building?.name}
+                        Par {booking.dish.user.name} • {booking.dish.user.building?.name}
                       </p>
                       <p className="text-gray-600 mb-4">
                         {booking.portions} portions • {formatPrice(booking.dish.price * booking.portions)}

@@ -1,44 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React from "react";
+import { useVerifyEmail } from "../../hooks/useVerifyEmail";
 
 export default function VerifyEmailPage() {
-  const [code, setCode] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const userId = searchParams.get("userId");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    try {
-      const response = await fetch("/api/auth/verify-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId, code }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
-
-      // Rediriger vers la page de connexion
-      router.push("/login?verified=true");
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Une erreur est survenue");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { userId, code, error, isLoading, setCode, handleSubmit } = useVerifyEmail();
 
   if (!userId) {
     return (

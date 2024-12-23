@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Heart } from 'lucide-react';
-import { useLikes } from '../../../hooks/useLikes';
-import { cn } from '../../../lib/utils';
+import { useLikes } from '../../hooks/useLikes';
+import { cn } from '../../lib/utils';
 
 interface LikeCountProps {
   dishId: string;

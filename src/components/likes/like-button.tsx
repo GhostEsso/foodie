@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Heart } from 'lucide-react';
-import { useLikes } from '../../../hooks/useLikes';
-import { Button } from '../../ui/button';
-import { cn } from '../../../lib/utils';
+import { useLikes } from '../../hooks/useLikes';
+import Button from '../ui/button';
+import { cn } from '../../lib/utils';
 
 interface LikeButtonProps {
   dishId: string;
@@ -35,11 +35,11 @@ export function LikeButton({
   return (
     <Button
       variant="ghost"
-      size="icon"
+      size="sm"
       onClick={handleClick}
       disabled={isLoading}
       className={cn(
-        'group hover:bg-pink-100 dark:hover:bg-pink-900',
+        'group hover:bg-pink-100 dark:hover:bg-pink-900 h-9 w-9 p-0',
         className
       )}
     >
