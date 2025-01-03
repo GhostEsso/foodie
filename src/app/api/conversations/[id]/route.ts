@@ -2,34 +2,25 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { getSession } from "../../../../lib/auth";
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
-export async function GET(_request: Request, { params }: RouteParams) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const conversation = await prisma.conversation.findFirst({
+    const conversation = await prisma.conversation.findUnique({
       where: {
         id: params.id,
-        users: {
-          some: {
-            id: session.id,
-          },
-        },
       },
       include: {
         dish: {
           select: {
             id: true,
             title: true,
-            images: true,
           },
         },
         users: {
@@ -50,14 +41,17 @@ export async function GET(_request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "Conversation non trouvée" }, { status: 404 });
     }
 
-    // Formater la réponse
-    const formattedConversation = {
+    // Vérifier que l'utilisateur fait partie de la conversation
+    const isParticipant = conversation.users.some(user => user.id === session.id);
+    if (!isParticipant) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    }
+
+    return NextResponse.json({
       id: conversation.id,
       dish: conversation.dish,
-      otherUser: conversation.users[0], // L'autre utilisateur de la conversation
-    };
-
-    return NextResponse.json(formattedConversation);
+      otherUser: conversation.users[0],
+    });
   } catch (error) {
     console.error("Erreur lors de la récupération de la conversation:", error);
     return NextResponse.json(

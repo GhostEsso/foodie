@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { getSession } from "../../../lib/auth";
 
-// Récupérer toutes les conversations de l'utilisateur
 export async function GET() {
   try {
     const session = await getSession();
@@ -14,54 +13,65 @@ export async function GET() {
       where: {
         users: {
           some: {
-            id: session.id,
-          },
-        },
+            id: session.id
+          }
+        }
       },
       include: {
         dish: {
           select: {
             id: true,
             title: true,
-            images: true,
-          },
+            images: true
+          }
         },
         users: {
           where: {
             NOT: {
-              id: session.id,
-            },
+              id: session.id
+            }
           },
           select: {
             id: true,
-            name: true,
-          },
+            name: true
+          }
         },
         messages: {
           orderBy: {
-            createdAt: "desc",
+            createdAt: 'desc'
           },
           take: 1,
           select: {
             content: true,
             createdAt: true,
-            isRead: true,
-          },
-        },
+            isRead: true
+          }
+        }
       },
+      orderBy: {
+        updatedAt: 'desc'
+      }
     });
 
-    // Formater les données pour le client
-    const formattedConversations = conversations.map((conv) => ({
+    // Formater les conversations pour correspondre à l'interface attendue
+    const formattedConversations = conversations.map(conv => ({
       id: conv.id,
-      dish: conv.dish,
-      otherUser: conv.users[0], // L'autre utilisateur de la conversation
-      lastMessage: conv.messages[0],
+      dish: {
+        id: conv.dish.id,
+        title: conv.dish.title,
+        images: conv.dish.images
+      },
+      otherUser: conv.users[0],
+      lastMessage: conv.messages[0] ? {
+        content: conv.messages[0].content,
+        createdAt: conv.messages[0].createdAt.toISOString(),
+        isRead: conv.messages[0].isRead
+      } : undefined
     }));
 
     return NextResponse.json(formattedConversations);
   } catch (error) {
-    console.error("Erreur lors de la récupération des conversations:", error);
+    console.error("[CONVERSATIONS_GET]", error);
     return NextResponse.json(
       { error: "Erreur lors de la récupération des conversations" },
       { status: 500 }

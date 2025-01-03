@@ -1,57 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Button from "../ui/button";
 import { User } from "lucide-react";
-
-interface SettingsFormProps {
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
+import { SettingsFormProps } from "../../models/settings/settings-form.types";
+import { useSettingsForm } from "../../hooks/useSettingsForm";
 
 export function SettingsForm({ user }: SettingsFormProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const { isLoading, error, success, handlePasswordUpdate, resetMessages } = useSettingsForm();
 
-  const handlePasswordUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
-    setSuccess("");
-
     const formData = new FormData(e.currentTarget);
-    const currentPassword = formData.get("currentPassword");
-    const newPassword = formData.get("newPassword");
-    const confirmPassword = formData.get("confirmPassword");
-
-    if (newPassword !== confirmPassword) {
-      setError("Les mots de passe ne correspondent pas");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/user/password", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Erreur lors de la mise à jour du mot de passe");
-      }
-
-      setSuccess("Mot de passe mis à jour avec succès");
+    const success = await handlePasswordUpdate(formData);
+    if (success) {
       e.currentTarget.reset();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Une erreur est survenue");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -77,7 +40,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
       {/* Changement de mot de passe */}
       <div>
         <h2 className="text-xl font-semibold mb-4">Changer le mot de passe</h2>
-        <form onSubmit={handlePasswordUpdate} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4" onChange={resetMessages}>
           {error && (
             <div className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm">
               {error}

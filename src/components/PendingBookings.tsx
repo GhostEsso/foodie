@@ -1,110 +1,102 @@
 "use client";
 
-import React, { useState } from "react";
-import { toast } from "react-hot-toast";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { useEffect } from "react";
+import { useBookings } from "../hooks/useBookings";
+import { Loading } from "./ui/loading";
+import { formatPrice } from "../lib/utils";
 import Button from "./ui/button";
 
-interface Booking {
-  id: string;
-  portions: number;
-  total: number;
-  status: string;
-  pickupTime: string;
-  user: {
-    name: string;
-    building: {
-      name: string;
-    };
-  };
-  dish: {
-    title: string;
-  };
-}
+export function PendingBookings() {
+  console.log('Rendu PendingBookings');
+  
+  const { bookings, isLoading, error, updateStatus } = useBookings({
+    filters: { status: "PENDING" }
+  });
 
-interface Props {
-  bookings: Booking[];
-  onStatusChange: () => void;
-}
+  useEffect(() => {
+    console.log('État actuel:', { bookings, isLoading, error });
+  }, [bookings, isLoading, error]);
 
-export function PendingBookings({ bookings, onStatusChange }: Props) {
-  const [loading, setLoading] = useState<string | null>(null);
-
-  const handleAction = async (bookingId: string, action: "approve" | "reject") => {
-    setLoading(bookingId);
+  const handleApprove = async (bookingId: string) => {
     try {
-      const response = await fetch(`/api/bookings/${bookingId}/${action}`, {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Une erreur est survenue");
-      }
-
-      toast.success(
-        action === "approve"
-          ? "Réservation approuvée avec succès"
-          : "Réservation rejetée avec succès"
-      );
-      onStatusChange();
+      await updateStatus(bookingId, "APPROVED");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Une erreur est survenue");
-    } finally {
-      setLoading(null);
+      console.error("Erreur lors de l'approbation:", error);
     }
   };
 
-  if (bookings.length === 0) {
+  const handleReject = async (bookingId: string) => {
+    try {
+      await updateStatus(bookingId, "REJECTED");
+    } catch (error) {
+      console.error("Erreur lors du rejet:", error);
+    }
+  };
+
+  if (isLoading) {
+    console.log('Affichage du loading');
+    return <Loading />;
+  }
+
+  if (error) {
+    console.log('Affichage de l\'erreur:', error);
     return (
-      <div className="text-center text-gray-500 py-4">
+      <div className="text-red-500 p-4 text-center">
+        Une erreur est survenue: {error}
+      </div>
+    );
+  }
+
+  if (!bookings || bookings.length === 0) {
+    console.log('Aucune réservation trouvée');
+    return (
+      <div className="text-gray-500 p-4 text-center">
         Aucune réservation en attente
       </div>
     );
   }
 
+  console.log('Affichage des réservations:', bookings);
+
   return (
     <div className="space-y-4">
+      <h2 className="text-xl font-semibold mb-4">Réservations en attente</h2>
       {bookings.map((booking) => (
         <div
           key={booking.id}
-          className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
+          className="bg-white rounded-lg shadow p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
         >
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <h3 className="font-medium">{booking.dish.title}</h3>
+          <div className="flex-grow">
+            <h3 className="font-medium">{booking.dish.title}</h3>
+            <p className="text-sm text-gray-600">
+              Client: {booking.user.name} ({booking.user.email})
+            </p>
+            <p className="text-sm text-gray-600">
+              {booking.portions} portion{booking.portions > 1 ? "s" : ""} •{" "}
+              {formatPrice(booking.total)}
+            </p>
+            {booking.user.building && (
               <p className="text-sm text-gray-600">
-                Réservé par: {booking.user.name}
+                Bâtiment: {booking.user.building.name}
               </p>
-              <p className="text-sm text-gray-600">
-                Date de retrait:{" "}
-                {format(new Date(booking.pickupTime), "d MMMM yyyy 'à' HH'h'mm", {
-                  locale: fr,
-                })}
-              </p>
-              <p className="text-sm text-gray-600">
-                Portions: {booking.portions} | Total: {booking.total}€
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => handleAction(booking.id, "approve")}
-                disabled={loading === booking.id}
-                variant="primary"
-                size="sm"
-              >
-                {loading === booking.id ? "..." : "Approuver"}
-              </Button>
-              <Button
-                onClick={() => handleAction(booking.id, "reject")}
-                disabled={loading === booking.id}
-                variant="danger"
-                size="sm"
-              >
-                {loading === booking.id ? "..." : "Rejeter"}
-              </Button>
-            </div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => handleApprove(booking.id)}
+              variant="primary"
+              size="sm"
+              className="bg-green-500 hover:bg-green-600"
+            >
+              Accepter
+            </Button>
+            <Button
+              onClick={() => handleReject(booking.id)}
+              variant="danger"
+              size="sm"
+            >
+              Refuser
+            </Button>
           </div>
         </div>
       ))}

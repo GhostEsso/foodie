@@ -2,9 +2,8 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Menu, X, ChevronDown, Settings, LogOut, User, Shield, MessageSquare } from 'lucide-react';
+import { Menu, X, ChevronDown, Settings, LogOut, User, Shield } from 'lucide-react';
 import { NotificationMenu } from './notifications/notification-menu';
-import { MessageMenu } from './messages/message-menu';
 import { usePathname } from 'next/navigation';
 
 function NavLinks({ session }: { session: any }) {
@@ -91,7 +90,7 @@ function UserMenu({ session }: { session: any }) {
                 className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 onClick={() => setIsOpen(false)}
               >
-                <MessageSquare className="h-4 w-4" />
+                <User className="h-4 w-4" />
                 Messages
               </Link>
               <form action="/api/auth/logout" method="POST" onSubmit={async (e) => {
@@ -172,7 +171,6 @@ export function Header({ session }: { session: any }) {
               ) : session ? (
                 <>
                   <div className="flex items-center gap-2">
-                    <MessageMenu />
                     <NotificationMenu />
                   </div>
                   <UserMenu session={session} />
@@ -197,7 +195,6 @@ export function Header({ session }: { session: any }) {
             <div className="sm:hidden flex items-center gap-2">
               {session && !isAdminPage && (
                 <div className="flex items-center gap-2">
-                  <MessageMenu />
                   <NotificationMenu />
                 </div>
               )}

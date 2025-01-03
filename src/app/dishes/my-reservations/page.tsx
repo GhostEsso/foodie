@@ -1,35 +1,40 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
 import { PendingBookings } from "../../../components/PendingBookings";
 import { useRouter } from "next/navigation";
+import { Loading } from "../../../components/ui/loading";
+import { useBookings } from "../../../hooks/useBookings";
 
 export default function MyReservationsPage() {
-  const [bookings, setBookings] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-
-  const fetchBookings = async () => {
-    try {
-      const response = await fetch("/api/dishes/pending-bookings");
-      if (!response.ok) {
-        throw new Error("Erreur lors de la récupération des réservations");
-      }
-      const data = await response.json();
-      setBookings(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
+  const { bookings, isLoading, error, refreshBookings } = useBookings({
+    filters: {
+      status: "PENDING"
     }
-  };
-
-  useEffect(() => {
-    fetchBookings();
-  }, []);
+  });
 
   if (isLoading) {
-    return <div>Chargement...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <Loading message="Chargement des réservations..." />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-red-600">Erreur: {error}</div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -40,9 +45,9 @@ export default function MyReservationsPage() {
             Réservations en attente
           </h1>
           <PendingBookings 
-            bookings={bookings} 
+            bookings={bookings || []} 
             onStatusChange={() => {
-              fetchBookings();
+              refreshBookings();
               router.refresh();
             }} 
           />

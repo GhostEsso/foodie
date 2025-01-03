@@ -1,59 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MessageSquare } from "lucide-react";
+import { useConversationList } from "../../hooks/useConversationList";
+import { ConversationListProps } from "../../models/chat/conversation-list.types";
 
-interface Conversation {
-  id: string;
-  dish: {
-    id: string;
-    title: string;
-    images: string[];
-  };
-  lastMessage?: {
-    content: string;
-    createdAt: string;
-    isRead: boolean;
-  };
-  otherUser: {
-    id: string;
-    name: string;
-  };
-}
-
-interface ConversationListProps {
-  onSelectConversation?: (conversation: Conversation) => void;
-}
-
-export function ConversationList({ onSelectConversation }: ConversationListProps) {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchConversations();
-  }, []);
-
-  const fetchConversations = async () => {
-    try {
-      const response = await fetch("/api/conversations");
-      if (response.ok) {
-        const data = await response.json();
-        setConversations(data);
-      }
-    } catch (error) {
-      console.error("Erreur lors de la récupération des conversations:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleConversationClick = (conversation: Conversation) => {
-    setSelectedConversation(conversation.id);
-    onSelectConversation?.(conversation);
-  };
+export function ConversationList(props: ConversationListProps) {
+  const {
+    conversations,
+    selectedConversation,
+    isLoading,
+    handleConversationClick
+  } = useConversationList(props);
 
   if (isLoading) {
     return <div className="p-4 text-center">Chargement...</div>;

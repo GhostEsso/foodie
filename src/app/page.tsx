@@ -1,36 +1,25 @@
-import { getSession } from "../lib/auth";
-import Button from "../components/ui/button";
-import { prisma } from "../lib/prisma";
-import Link from "next/link";
+"use client";
+
 import React from "react";
+import Button from "../components/ui/button";
+import Link from "next/link";
+import { Loading } from "../components/ui/loading";
+import { useHome } from "../hooks/useHome";
 
-async function getRecentDishes() {
-  return prisma.dish.findMany({
-    where: {
-      available: true,
-    },
-    include: {
-      user: {
-        select: {
-          name: true,
-          building: {
-            select: {
-              name: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 3,
-  });
-}
+export default function Home() {
+  const { session, recentDishes, isLoading } = useHome();
 
-export default async function Home() {
-  const session = await getSession();
-  const recentDishes = await getRecentDishes();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <Loading message="Chargement..." />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

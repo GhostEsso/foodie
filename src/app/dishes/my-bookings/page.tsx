@@ -1,3 +1,4 @@
+import React from "react";
 import { MyBookings } from "../../../components/dishes/my-bookings";
 
 export default function MyBookingsPage() {

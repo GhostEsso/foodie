@@ -1,133 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React from "react";
 import Button from "../ui/button";
 import Image from "next/image";
+import { useDishForm } from "../../hooks/useDishForm";
 
 export function DishForm() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [ingredients, setIngredients] = useState<string[]>([""]);
-  const [images, setImages] = useState<string[]>([]);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [availableFrom, setAvailableFrom] = useState("");
-  const [availableTo, setAvailableTo] = useState("");
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    // Vérifier si on ne dépasse pas 3 images
-    if (images.length + files.length > 3) {
-      setError("Vous ne pouvez pas ajouter plus de 3 images");
-      return;
-    }
-
-    // Créer les URLs pour la prévisualisation
-    const newImageUrls = Array.from(files).map(file => URL.createObjectURL(file));
-    setImages([...images, ...newImageUrls]);
-    setImageFiles([...imageFiles, ...Array.from(files)]);
-  };
-
-  const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index);
-    const newImageFiles = imageFiles.filter((_, i) => i !== index);
-    setImages(newImages);
-    setImageFiles(newImageFiles);
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
-
-    // Validation des dates
-    if (availableFrom && availableTo && new Date(availableFrom) >= new Date(availableTo)) {
-      setError("La date de fin doit être postérieure à la date de début");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const formElement = e.target as HTMLFormElement;
-      const titleInput = formElement.querySelector<HTMLInputElement>('#title');
-      const descriptionInput = formElement.querySelector<HTMLTextAreaElement>('#description');
-      const priceInput = formElement.querySelector<HTMLInputElement>('#price');
-      const portionsInput = formElement.querySelector<HTMLInputElement>('#portions');
-
-      if (!titleInput || !descriptionInput || !priceInput || !portionsInput) {
-        throw new Error("Formulaire incomplet");
-      }
-
-      // Créer d'abord les données de base du plat
-      const baseData = {
-        title: titleInput.value,
-        description: descriptionInput.value,
-        price: parseFloat(priceInput.value),
-        portions: parseInt(portionsInput.value),
-        ingredients: ingredients.filter(Boolean),
-        available: true,
-        images: [] as string[],
-        availableFrom: availableFrom ? new Date(availableFrom).toISOString() : null,
-        availableTo: availableTo ? new Date(availableTo).toISOString() : null,
-      };
-
-      console.log("Données envoyées:", {
-        availableFrom: baseData.availableFrom,
-        availableTo: baseData.availableTo
-      });
-
-      // Si des images ont été sélectionnées, essayer de les uploader
-      if (imageFiles.length > 0) {
-        try {
-          const uploadedImages = await Promise.all(
-            imageFiles.map(async (file) => {
-              const formData = new FormData();
-              formData.append("file", file);
-              
-              const response = await fetch("/api/upload", {
-                method: "POST",
-                body: formData,
-              });
-
-              if (!response.ok) {
-                throw new Error("Erreur lors de l'upload des images");
-              }
-
-              const data = await response.json();
-              return data.url;
-            })
-          );
-          baseData.images = uploadedImages;
-        } catch (uploadError) {
-          console.error("Erreur lors de l'upload des images:", uploadError);
-          // Continuer sans les images
-        }
-      }
-
-      // Créer le plat avec ou sans images
-      const response = await fetch("/api/dishes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(baseData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors de la création du plat");
-      }
-
-      router.push("/dishes");
-      router.refresh();
-    } catch (error) {
-      console.error("Erreur:", error);
-      setError(error instanceof Error ? error.message : "Une erreur est survenue");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    isLoading,
+    error,
+    ingredients,
+    images,
+    availableFrom,
+    availableTo,
+    handleImageChange,
+    removeImage,
+    handleSubmit,
+    handleIngredientChange,
+    addIngredient,
+    removeIngredient,
+    setAvailableFrom,
+    setAvailableTo
+  } = useDishForm();
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -204,11 +98,7 @@ export function DishForm() {
               <input
                 type="text"
                 value={ingredient}
-                onChange={(e) => {
-                  const newIngredients = [...ingredients];
-                  newIngredients[index] = e.target.value;
-                  setIngredients(newIngredients);
-                }}
+                onChange={(e) => handleIngredientChange(index, e.target.value)}
                 placeholder="Ex: Tomates, Oignons, etc."
                 className="flex-1 rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
               />
@@ -217,7 +107,7 @@ export function DishForm() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setIngredients(ingredients.filter((_, i) => i !== index))}
+                  onClick={() => removeIngredient(index)}
                 >
                   Retirer
                 </Button>
@@ -228,7 +118,7 @@ export function DishForm() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setIngredients([...ingredients, ""])}
+            onClick={addIngredient}
           >
             Ajouter un ingrédient
           </Button>
